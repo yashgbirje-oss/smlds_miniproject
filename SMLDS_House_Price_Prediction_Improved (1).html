@@ -1,0 +1,271 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+<meta charset="UTF-8"><meta name="viewport" content="width=device-width,initial-scale=1">
+<title>SMLDS Mini Project | House Price Prediction</title>
+<script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+<script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+<style>
+:root{--bg:#f4f7fb;--card:#fff;--ink:#172033;--muted:#68758b;--line:#e4e9f1;--accent:#315ee8;--accent2:#16a085;--code:#101827}*{box-sizing:border-box}body{margin:0;background:var(--bg);color:var(--ink);font:15px/1.55 system-ui,-apple-system,Segoe UI,Roboto,Arial,sans-serif}.top{background:linear-gradient(120deg,#111d3b,#2448a7);color:white;padding:34px max(20px,calc((100% - 1200px)/2)) 28px}.top h1{font-size:clamp(27px,4vw,42px);line-height:1.1;margin:8px 0 12px}.top p{color:#dbe5ff;max-width:780px;margin:0}.tag{display:inline-block;background:#ffffff20;border:1px solid #ffffff35;padding:5px 10px;border-radius:30px;font-size:12px;letter-spacing:.04em}.layout{max-width:1200px;margin:22px auto;padding:0 16px;display:grid;grid-template-columns:230px minmax(0,1fr);gap:20px}.side{position:sticky;top:12px;align-self:start;background:var(--card);border:1px solid var(--line);border-radius:15px;padding:14px}.side strong{display:block;padding:6px 9px 10px}.side a{display:block;color:#45536c;text-decoration:none;padding:8px 9px;border-radius:8px;font-size:13px}.side a:hover{background:#edf2ff;color:var(--accent)}main{min-width:0}.card{background:var(--card);border:1px solid var(--line);border-radius:15px;padding:22px;margin-bottom:17px;box-shadow:0 4px 16px #17203308}.card h2{margin:0 0 7px;font-size:22px}.card h3{font-size:16px;margin:20px 0 8px}.muted{color:var(--muted)}.upload{border:2px dashed #9aafea;background:#f8faff;border-radius:13px;padding:20px;text-align:center}.upload input{max-width:100%;margin:12px auto}.btn{background:var(--accent);color:#fff;border:0;border-radius:9px;padding:10px 15px;font-weight:650;cursor:pointer}.btn:disabled{opacity:.5;cursor:wait}.status{margin-top:10px;color:var(--muted);font-size:13px}.metrics{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px}.metric{background:#f7f9fd;border:1px solid var(--line);border-radius:12px;padding:15px}.metric span{display:block;color:var(--muted);font-size:12px}.metric b{display:block;font-size:21px;margin-top:4px;overflow-wrap:anywhere}.column-list{display:flex;flex-wrap:wrap;gap:7px;margin:8px 0 14px;max-width:100%}.column-chip{display:inline-block;background:#eef3ff;border:1px solid #d8e3ff;color:#263d78;border-radius:7px;padding:5px 9px;font:12px/1.4 ui-monospace,SFMono-Regular,Consolas,monospace;overflow-wrap:anywhere;max-width:100%}.tablewrap{overflow:auto;max-width:100%;border:1px solid var(--line);border-radius:10px;margin:10px 0}table{border-collapse:collapse;width:100%;font-size:12px;white-space:nowrap}th,td{text-align:left;padding:8px 10px;border-bottom:1px solid var(--line)}th{background:#f3f6fb;position:sticky;top:0}pre{background:var(--code);color:#e2e8f0;border-radius:10px;padding:15px;overflow:auto;font-size:12px;line-height:1.55;white-space:pre;max-height:380px}details{margin-top:12px}summary{cursor:pointer;color:var(--accent);font-weight:650}.grid2{display:grid;grid-template-columns:repeat(2,minmax(0,1fr));gap:16px}.chartbox{min-height:260px;position:relative}.note{background:#fff8e8;border:1px solid #f1dba8;padding:12px 14px;border-radius:10px;color:#75530a;font-size:13px}.good{color:#087b59}.bad{color:#b54708}.formgrid{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:12px}.formgrid label{font-size:12px;color:var(--muted);display:block}.formgrid input,.formgrid select{width:100%;padding:10px;border:1px solid #ccd5e4;border-radius:8px;background:white;color:var(--ink);margin-top:4px}.prediction{font-size:28px;font-weight:750;color:var(--accent);margin-top:12px}.foot{text-align:center;color:var(--muted);font-size:12px;padding:18px}.hide{display:none}
+/* Student-friendly prediction UI */
+.predict-intro{display:grid;grid-template-columns:1.3fr .7fr;gap:14px;margin:14px 0 18px}.predict-info{background:#f4f7ff;border:1px solid #dce5ff;border-radius:12px;padding:15px}.predict-info h3{margin:0 0 6px}.predict-info p{margin:0;color:#586780;font-size:13px}.predict-badge{background:#effaf6;border:1px solid #c8eee0;border-radius:12px;padding:15px;color:#146c53}.predict-badge b{display:block;font-size:18px}.form-section{border:1px solid var(--line);border-radius:12px;padding:15px;margin:14px 0}.form-section h3{margin:0 0 12px}.field-help{display:block;font-size:11px;color:#8390a4;margin-top:3px;line-height:1.35}.formgrid label{font-weight:650;color:#3e4a60}.formgrid input:focus,.formgrid select:focus{outline:2px solid #c9d7ff;border-color:var(--accent)}.predict-actions{display:flex;flex-wrap:wrap;gap:10px;align-items:center}.btn.secondary{background:#e9eefb;color:#2e4f9d}.prediction-panel{margin-top:18px;padding:18px;border:1px solid #dbe5ff;border-radius:14px;background:linear-gradient(135deg,#f8faff,#fff)}.prediction-main{font-size:clamp(28px,4vw,38px);font-weight:800;color:var(--accent);line-height:1.2;margin:7px 0}.prediction-sub{color:var(--muted);font-size:13px}.prediction-stats{display:grid;grid-template-columns:repeat(3,minmax(0,1fr));gap:10px;margin-top:14px}.prediction-stat{background:white;border:1px solid var(--line);border-radius:10px;padding:12px}.prediction-stat span{display:block;font-size:11px;color:var(--muted)}.prediction-stat b{display:block;font-size:16px;margin-top:4px;overflow-wrap:anywhere}.prediction-note{font-size:12px;color:#75530a;background:#fff8e8;border:1px solid #f1dba8;padding:11px;border-radius:9px;margin-top:12px}.mini-label{font-size:11px;text-transform:uppercase;letter-spacing:.06em;color:#6d7b91;font-weight:750}@media(max-width:800px){.predict-intro{grid-template-columns:1fr}.prediction-stats{grid-template-columns:1fr}}
+@media(max-width:800px){.layout{grid-template-columns:1fr}.side{position:static;display:flex;overflow:auto;gap:4px}.side strong{display:none}.side a{white-space:nowrap}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}.grid2{grid-template-columns:1fr}.formgrid{grid-template-columns:repeat(2,minmax(0,1fr))}.card{padding:16px}}@media(max-width:430px){.formgrid{grid-template-columns:1fr}.metrics{grid-template-columns:repeat(2,minmax(0,1fr))}}
+
+/* Final project polish: dashboard, exports, print and mobile layout */
+.dashboard-grid{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:12px;margin:18px 0}
+.dash-tile{background:linear-gradient(145deg,#fff,#f6f8ff);border:1px solid var(--line);border-radius:13px;padding:16px;min-width:0}
+.dash-tile .dash-label{font-size:12px;color:var(--muted);display:block}
+.dash-tile strong{display:block;font-size:clamp(18px,2vw,25px);overflow-wrap:anywhere;margin-top:6px}
+.dash-tile small{color:var(--muted)}
+.action-row{display:flex;flex-wrap:wrap;gap:9px;margin:12px 0}
+.btn.outline{background:#fff;color:var(--accent);border:1px solid #cbd7f8}
+.workflow{display:grid;grid-template-columns:repeat(5,minmax(0,1fr));gap:8px;margin:14px 0}
+.workflow div{background:#f4f7ff;border:1px solid #dce5ff;border-radius:9px;padding:11px;text-align:center;font-size:12px;font-weight:650}
+.workflow div span{display:block;color:var(--muted);font-weight:400;margin-top:4px}
+@media(max-width:900px){.layout{grid-template-columns:1fr}.side{position:static;display:flex;gap:4px;overflow-x:auto;white-space:nowrap}.side strong{display:none}.side a{flex-shrink:0}.metrics,.dashboard-grid{grid-template-columns:repeat(2,minmax(0,1fr))}.workflow{grid-template-columns:1fr 1fr}}
+@media(max-width:560px){.card{padding:15px}.formgrid,.grid2{grid-template-columns:1fr}.metrics,.dashboard-grid,.prediction-stats{grid-template-columns:1fr 1fr}.top{padding:25px 17px}}
+@media print{body{background:#fff;font-size:11pt}.top{background:#fff!important;color:#111;padding:12px 0;border-bottom:2px solid #222}.top p{color:#333}.layout{display:block;max-width:none;margin:0;padding:0}.side,.upload input,.upload button,.predict-actions,.action-row,.foot{display:none!important}.card{box-shadow:none;border:1px solid #bbb;break-inside:avoid;margin:10px 0;padding:14px}.card h2{font-size:16pt}details:not([open])>*:not(summary){display:block!important}pre{white-space:pre-wrap;max-height:none;font-size:8pt;break-inside:avoid}.chartbox{height:260px;break-inside:avoid}canvas{max-width:100%}a{color:#111;text-decoration:none}}
+</style></head><body>
+<header class="top"><span class="tag">SMLDS MINI PROJECT · SUPERVISED LEARNING — REGRESSION</span><h1>House Price Prediction<br>Using Machine Learning</h1><p>Interactive browser version of the supplied mini-project PDF. Upload Housing.csv to reproduce dataset exploration, quality checks, EDA, preprocessing, train/test split, Linear Regression, evaluation metrics and prediction outputs.</p></header>
+<div class="layout"><nav class="side"><strong>Project sections</strong><a href="#upload">Upload dataset</a><a href="#dashboard">Dashboard</a><a href="#methodology">Methodology</a><a href="#overview">Project overview</a><a href="#load">1. Load dataset</a><a href="#structure">2. Structure & summary</a><a href="#quality">3. Data quality</a><a href="#eda">4. EDA</a><a href="#prep">5. Preprocessing</a><a href="#split">6. Train/test split</a><a href="#model">7. Model building</a><a href="#evaluation">8. Evaluation</a><a href="#results">9. Results</a><a href="#conclusion">10. Conclusion</a><a href="#predict">Try a prediction</a></nav>
+<main>
+<section class="card" id="upload"><h2>Upload Housing dataset</h2><p class="muted">Upload either a CSV file (.csv) or an Excel workbook (.xlsx, .xls). For Excel files, the first worksheet is read. Processing happens in this browser tab using Python (Pyodide) and scikit-learn.</p><div class="upload"><b>Choose your Housing dataset file</b><br><input type="file" id="csvfile" accept=".csv,.xlsx,.xls,text/csv,application/vnd.openxmlformats-officedocument.spreadsheetml.sheet,application/vnd.ms-excel"><br><button class="btn" id="runBtn" disabled>Run complete mini project</button><div class="status" id="status">Loading browser Python engine…</div></div><div class="note" style="margin-top:12px">For matching the PDF, upload the original 545-row, 13-column Housing.csv. This page does not invent or substitute dataset rows. Internet is required the first time to load the browser libraries.</div></section>
+<section class="card" id="dashboard"><h2>Project Dashboard</h2><p class="muted">A quick summary of the uploaded housing dataset and trained model. Values populate only after you run the project.</p><div class="dashboard-grid"><div class="dash-tile"><span class="dash-label">Dataset records</span><strong id="dashRows">—</strong><small>Rows loaded</small></div><div class="dash-tile"><span class="dash-label">Average house price</span><strong id="dashAvg">—</strong><small>From uploaded data</small></div><div class="dash-tile"><span class="dash-label">Model R² score</span><strong id="dashR2">—</strong><small>Test set performance</small></div><div class="dash-tile"><span class="dash-label">Mean absolute error</span><strong id="dashMae">—</strong><small>Lower is generally better</small></div></div><div class="action-row"><button class="btn outline" type="button" id="downloadPredictionsBtn" disabled>Download test predictions CSV</button><button class="btn outline" type="button" id="downloadMetricsBtn" disabled>Download model metrics CSV</button><button class="btn outline" type="button" onclick="window.print()">Print / Save report as PDF</button></div></section>
+<section class="card" id="methodology"><h2>Project Methodology</h2><p class="muted">The same supervised regression workflow used in this mini project.</p><div class="workflow"><div>1. Dataset<span>Upload and inspect</span></div><div>2. EDA<span>Summaries and 3 graphs</span></div><div>3. Preprocess<span>One-hot encode categories</span></div><div>4. Train model<span>80:20 split, state 42</span></div><div>5. Evaluate<span>MAE, RMSE and R²</span></div></div><p><b>Viva explanation:</b> Linear Regression learns a relationship between the house features and price. The model is trained on 80% of the rows and evaluated on the remaining 20%. MAE measures average absolute error, RMSE penalizes larger errors more, and R² measures the fraction of test-price variation explained by the model.</p></section>
+<section class="card" id="overview"><h2>Problem Statement</h2><p>House prices depend on several characteristics, including area, bedrooms, bathrooms, number of stories, parking, access to the main road, amenities and furnishing status. The aim is to train a regression model that estimates a property's price from these features.</p><h3>Objectives</h3><ul><li>Explore the dataset and identify important patterns.</li><li>Check for missing values and duplicate records.</li><li>Preprocess numerical and categorical features.</li><li>Train a Linear Regression model to predict house prices.</li><li>Evaluate the model using MAE, RMSE and R² score.</li></ul><h3>Dataset Description</h3><ul><li>Dataset: Housing Prices Dataset (Housing.csv)</li><li>Source: <a href="https://www.kaggle.com/datasets/yasserh/housing-prices-dataset" target="_blank" rel="noreferrer">Kaggle — Housing Prices Dataset</a></li><li>Expected rows: 545; columns: 13 (12 input features and 1 target).</li><li>Target variable: <code>price</code>.</li></ul><p class="muted">The dataset does not contain named cities or neighbourhoods. It includes the categorical indicators <code>mainroad</code> and <code>prefarea</code> as limited location-related features.</p></section>
+<section class="card" id="load"><h2>1. Import Libraries and Load Dataset</h2><details><summary>Show original notebook code</summary><pre>import pandas as pd
+import numpy as np
+import matplotlib.pyplot as plt
+import seaborn as sns
+
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Load the dataset. Keep Housing.csv in the same folder as this notebook.
+df = pd.read_csv("Housing.csv")
+
+print("Dataset shape:", df.shape)
+display(df.head())</pre></details><div id="loadOutput" class="muted">Upload the CSV and run the project to see the dataset shape and first five rows.</div></section>
+<section class="card" id="structure"><h2>2. Dataset Structure and Summary</h2><details><summary>Show original notebook code</summary><pre>print("Column names:")
+print(df.columns.tolist())
+
+print("\nData types and non-null counts:")
+df.info()
+
+print("\nNumerical summary:")
+display(df.describe())
+
+print("\nCategorical summary:")
+display(df.describe(include="object"))</pre></details><h3>Column names and data types</h3><div id="structureOutput" class="muted">Results appear here after upload.</div><h3>Numerical summary</h3><div id="numSummary" class="muted">—</div><h3>Categorical summary</h3><div id="catSummary" class="muted">—</div></section>
+<section class="card" id="quality"><h2>3. Data Quality Checks: Missing Values and Duplicates</h2><details><summary>Show original notebook code</summary><pre>print("Missing values by column:")
+display(df.isnull().sum().to_frame(name="Missing values"))
+print("Total missing values:", int(df.isnull().sum().sum()))
+print("Duplicate rows:", int(df.duplicated().sum()))
+
+# Check for unexpected negative values in numerical columns
+numeric_cols = df.select_dtypes(include=np.number).columns
+print("\nNegative values in numeric columns:")
+display((df[numeric_cols] &lt; 0).sum().to_frame(name="Negative values"))</pre></details><div id="qualityOutput" class="muted">Results appear here after upload.</div></section>
+<section class="card" id="eda"><h2>4. Exploratory Data Analysis (EDA)</h2><p class="muted">Graphs and summary values below are computed from the uploaded CSV.</p><h3>Graph 1: Distribution of House Prices</h3><p>This histogram shows how house prices are distributed and whether the distribution is symmetric or skewed.</p><details><summary>Show original notebook code</summary><pre>plt.figure(figsize=(8, 5))
+sns.histplot(df["price"], bins=25, kde=True)
+plt.title("Distribution of House Prices")
+plt.xlabel("House Price")
+plt.ylabel("Number of Houses")
+plt.tight_layout()
+plt.show()
+
+print("Price mean:", round(df["price"].mean(), 2))
+print("Price median:", round(df["price"].median(), 2))
+print("Minimum price:", df["price"].min())
+print("Maximum price:", df["price"].max())</pre></details><div class="grid2"><div class="chartbox"><canvas id="priceChart"></canvas></div><div id="priceStats" class="muted"></div></div><h3>Graph 2: Area vs. Price</h3><p>This scatter plot helps inspect whether larger properties tend to have higher prices.</p><details><summary>Show original notebook code</summary><pre>plt.figure(figsize=(8, 5))
+sns.scatterplot(data=df, x="area", y="price", alpha=0.7)
+plt.title("House Area vs. Price")
+plt.xlabel("Area")
+plt.ylabel("House Price")
+plt.tight_layout()
+plt.show()
+print("Correlation between area and price:", round(df["area"].corr(df["price"]), 3))</pre></details><div class="grid2"><div class="chartbox"><canvas id="areaChart"></canvas></div><div id="corrOutput" class="muted"></div></div><h3>Graph 3: Average Price by Furnishing Status</h3><p>Group averages show association, not proof that furnishing alone causes the price difference.</p><details><summary>Show original notebook code</summary><pre>avg_price_by_furnishing = (
+    df.groupby("furnishingstatus", as_index=False)["price"]
+      .mean()
+      .sort_values("price", ascending=False)
+)
+plt.figure(figsize=(8, 5))
+sns.barplot(data=avg_price_by_furnishing, x="furnishingstatus", y="price")
+plt.title("Average House Price by Furnishing Status")
+plt.xlabel("Furnishing Status")
+plt.ylabel("Average House Price")
+plt.tight_layout()
+plt.show()
+display(avg_price_by_furnishing)</pre></details><div class="grid2"><div class="chartbox"><canvas id="furnishChart"></canvas></div><div id="furnishOutput" class="muted"></div></div></section>
+<section class="card" id="prep"><h2>5. Data Preprocessing</h2><p>The uploaded dataset is checked for missing values and duplicate rows. The target <code>price</code> is separated from input features. Categorical columns are converted to numeric indicator columns using one-hot encoding. Numerical columns are passed through unchanged. A pipeline fits the encoder on training data to help prevent data leakage.</p><details><summary>Show original notebook code</summary><pre># Target and input features
+X = df.drop(columns=["price"])
+y = df["price"]
+
+# Identify categorical and numerical input columns
+categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
+numerical_features = X.select_dtypes(include=np.number).columns.tolist()
+print("Categorical features:", categorical_features)
+print("Numerical features:", numerical_features)
+
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("categorical", OneHotEncoder(handle_unknown="ignore", drop="first"), categorical_features),
+        ("numerical", "passthrough", numerical_features)
+    ]
+)</pre></details><div id="prepOutput" class="muted">Results appear here after upload.</div></section>
+<section class="card" id="split"><h2>6. Train/Test Split</h2><details><summary>Show original notebook code</summary><pre># 80% training data and 20% testing data
+X_train, X_test, y_train, y_test = train_test_split(
+    X, y, test_size=0.20, random_state=42
+)
+print("Training records:", len(X_train))
+print("Testing records:", len(X_test))</pre></details><div id="splitOutput" class="muted">Results appear here after upload.</div></section>
+<section class="card" id="model"><h2>7. Model Building: Linear Regression</h2><p>Linear Regression is selected as a baseline regression algorithm because it is straightforward to understand and provides a useful starting point for predicting a continuous target such as house price.</p><details><summary>Show original notebook code</summary><pre>model = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("regressor", LinearRegression())
+])
+
+model.fit(X_train, y_train)
+y_pred = model.predict(X_test)
+print("Model training completed.")
+print("First 10 predictions:")
+display(pd.DataFrame({
+    "Actual Price": y_test.iloc[:10].to_numpy(),
+    "Predicted Price": y_pred[:10]
+}))</pre></details><div id="modelOutput" class="muted">Results appear here after upload.</div><h3>First 10 actual and predicted prices</h3><div id="predTable" class="muted">—</div></section>
+<section class="card" id="evaluation"><h2>8. Model Evaluation</h2><details><summary>Show original notebook code</summary><pre>mae = mean_absolute_error(y_test, y_pred)
+rmse = np.sqrt(mean_squared_error(y_test, y_pred))
+r2 = r2_score(y_test, y_pred)
+
+metrics = pd.DataFrame({
+    "Metric": ["MAE", "RMSE", "R² Score"],
+    "Value": [mae, rmse, r2]
+})
+display(metrics)
+print(f"MAE: {mae:,.2f}")
+print(f"RMSE: {rmse:,.2f}")
+print(f"R² Score: {r2:.3f}")</pre></details><div class="metrics" id="metricCards"><div class="metric"><span>MAE</span><b>—</b></div><div class="metric"><span>RMSE</span><b>—</b></div><div class="metric"><span>R² Score</span><b>—</b></div><div class="metric"><span>Test records</span><b>—</b></div></div><h3>Actual vs. Predicted Prices</h3><p>Points closer to the diagonal indicate predictions closer to the actual prices.</p><details><summary>Show original notebook code</summary><pre>plt.figure(figsize=(7, 6))
+sns.scatterplot(x=y_test, y=y_pred, alpha=0.75)
+min_val = min(float(y_test.min()), float(np.min(y_pred)))
+max_val = max(float(y_test.max()), float(np.max(y_pred)))
+plt.plot([min_val, max_val], [min_val, max_val], linestyle="--")
+plt.title("Actual vs. Predicted House Prices")
+plt.xlabel("Actual Price")
+plt.ylabel("Predicted Price")
+plt.tight_layout()
+plt.show()</pre></details><div class="chartbox"><canvas id="actualChart"></canvas></div></section>
+<section class="card" id="results"><h2>9. Results and Discussion</h2><p>MAE is the average absolute prediction error in the dataset's price units. RMSE gives greater weight to larger errors. R² indicates the proportion of variation in the test-set prices explained by the model; a value closer to 1 generally indicates a better fit.</p><p>Use the actual output from your run in your report. Results depend on the selected dataset, split and model. This dataset has limited location information and does not include factors such as exact neighbourhood, property age or current market conditions, so predictions should be treated as educational estimates rather than real-estate valuations.</p><div id="resultDiscussion" class="muted">Run the model to populate the result summary.</div></section>
+<section class="card" id="conclusion"><h2>10. Conclusion</h2><p>This project uses the Housing Prices dataset to build a Linear Regression model for house price prediction. Exploratory analysis examines price distribution, the relationship between area and price, and average price across furnishing categories. Categorical features are one-hot encoded and the data is split into training and testing sets. Model performance is assessed using MAE, RMSE and R² score. Future improvements could include testing Random Forest Regression, tuning model parameters and using a dataset with more detailed location and property information.</p><h3>Dataset Reference</h3><p>Yasser H. (Kaggle), <a href="https://www.kaggle.com/datasets/yasserh/housing-prices-dataset" target="_blank" rel="noreferrer">Housing Prices Dataset</a>.</p></section>
+<section class="card" id="predict"><h2>House Price Estimator</h2><p class="muted">Try a realistic property profile. The estimate comes from the Linear Regression model trained above using your uploaded Housing dataset and the same 12 input features.</p>
+<div class="predict-intro"><div class="predict-info"><h3>How this estimate works</h3><p>Enter the property's size, rooms, facilities and furnishing. The trained model combines these details to estimate a price based on patterns learned from the dataset. Use the sample profile or change any value to experiment.</p></div><div class="predict-badge"><span class="mini-label">Model status</span><b id="predictModelStatus">Waiting for dataset</b><span class="field-help">Upload a valid dataset and run the project before predicting.</span></div></div>
+<div class="form-section"><h3>1. Property size and layout</h3><div class="formgrid"><div><label for="f_area">Built-up area</label><input id="f_area" type="number" value="5000" min="1" step="50"><span class="field-help">Area units as recorded in Housing.csv</span></div><div><label for="f_bedrooms">Bedrooms</label><input id="f_bedrooms" type="number" value="3" min="1" max="20" step="1"><span class="field-help">Number of bedrooms</span></div><div><label for="f_bathrooms">Bathrooms</label><input id="f_bathrooms" type="number" value="2" min="1" max="10" step="1"><span class="field-help">Number of bathrooms</span></div><div><label for="f_stories">Stories / floors</label><input id="f_stories" type="number" value="2" min="1" max="10" step="1"><span class="field-help">Number of stories</span></div><div><label for="f_parking">Parking spaces</label><input id="f_parking" type="number" value="1" min="0" max="10" step="1"><span class="field-help">Available parking spaces</span></div></div></div>
+<div class="form-section"><h3>2. Access and facilities</h3><div class="formgrid"><div><label for="f_mainroad">Main road access</label><select id="f_mainroad"><option value="yes">Yes</option><option value="no">No</option></select><span class="field-help">Property has main-road access</span></div><div><label for="f_guestroom">Guest room</label><select id="f_guestroom"><option value="no">No</option><option value="yes">Yes</option></select></div><div><label for="f_basement">Basement</label><select id="f_basement"><option value="no">No</option><option value="yes">Yes</option></select></div><div><label for="f_hotwaterheating">Hot water heating</label><select id="f_hotwaterheating"><option value="no">No</option><option value="yes">Yes</option></select></div><div><label for="f_airconditioning">Air conditioning</label><select id="f_airconditioning"><option value="no">No</option><option value="yes">Yes</option></select></div><div><label for="f_prefarea">Preferred area</label><select id="f_prefarea"><option value="no">No</option><option value="yes">Yes</option></select><span class="field-help">Dataset's preferred-area indicator</span></div><div><label for="f_furnishingstatus">Furnishing status</label><select id="f_furnishingstatus"><option value="semi-furnished">Semi-furnished</option><option value="furnished">Furnished</option><option value="unfurnished">Unfurnished</option></select></div></div></div>
+<div class="predict-actions"><button id="predictBtn" class="btn" disabled>Estimate house price</button><button id="sampleBtn" class="btn secondary" type="button">Load sample profile</button><span class="muted" style="font-size:12px">Sample: 5,000 area · 3 bedrooms · 2 bathrooms</span></div><div id="predictionOutput"></div><div class="prediction-note">Educational estimate only: this dataset does not include exact city/neighbourhood, property age, land title, building condition or current market rates. The displayed range is a simple model-error illustration, not a guaranteed market price.</div></section>
+<div class="foot">SMLDS · House Price Prediction Using Machine Learning · Browser-based educational project</div>
+</main></div>
+<script>
+let pyodide=null, csvText='', chartRefs={}, ready=false;
+const $=id=>document.getElementById(id);
+const fmt=(n,d=2)=>Number(n).toLocaleString('en-IN',{maximumFractionDigits:d,minimumFractionDigits:d});
+const money=n=>'₹'+Number(n).toLocaleString('en-IN',{maximumFractionDigits:2});
+function table(headers, rows){return '<div class="tablewrap"><table><thead><tr>'+headers.map(x=>'<th>'+esc(x)+'</th>').join('')+'</tr></thead><tbody>'+rows.map(r=>'<tr>'+r.map(v=>'<td>'+esc(v==null?'':String(v))+'</td>').join('')+'</tr>').join('')+'</tbody></table></div>'}
+function esc(s){return String(s).replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]))}
+function setChart(id,type,data,options={}){if(chartRefs[id])chartRefs[id].destroy();chartRefs[id]=new Chart($(id),{type,data,options:{responsive:true,maintainAspectRatio:false,plugins:{legend:{display:type!=='scatter'},tooltip:{enabled:true}},...options}})}
+async function init(){try{pyodide=await loadPyodide();$('status').textContent='Preparing Python packages (NumPy, pandas and scikit-learn)…';await pyodide.loadPackage(['numpy','pandas','scikit-learn']);ready=true;$('status').textContent='Ready. Select a CSV or Excel file, then click “Run complete mini project”.';$('runBtn').disabled=!csvText;$('predictBtn').disabled=true}catch(e){$('status').textContent='Could not load the browser Python packages. Check your internet connection and reload. Details: '+e.message;console.error(e)}}
+$('csvfile').addEventListener('change',async e=>{
+ const f=e.target.files[0]; if(!f)return;
+ csvText=''; $('runBtn').disabled=true; $('status').textContent='Reading '+f.name+'…';
+ try {
+   const ext=f.name.split('.').pop().toLowerCase();
+   if(ext==='csv') { csvText=await f.text(); }
+   else if(ext==='xlsx'||ext==='xls') {
+     if(typeof XLSX==='undefined') throw new Error('Excel reader library did not load. Check your internet connection and reload this page.');
+     const buffer=await f.arrayBuffer();
+     const workbook=XLSX.read(buffer,{type:'array',cellDates:false});
+     if(!workbook.SheetNames.length) throw new Error('No worksheet was found in this Excel file.');
+     const worksheet=workbook.Sheets[workbook.SheetNames[0]];
+     csvText=XLSX.utils.sheet_to_csv(worksheet,{blankrows:false});
+     if(!csvText.trim()) throw new Error('The first worksheet is empty.');
+   } else { throw new Error('Unsupported file type. Please choose .csv, .xlsx, or .xls.'); }
+   $('status').textContent=`Selected ${f.name} (${f.size.toLocaleString()} bytes)${ext==='csv'?'':' · imported worksheet as table data'}. ${ready?'Ready to run.':'Python engine is still loading…'}`;
+   $('runBtn').disabled=!(ready&&csvText);
+ } catch(err) { csvText=''; $('status').innerHTML='<span class="bad">Could not read file:</span> '+esc(err.message); }
+});
+const pythonCode = String.raw`
+import pandas as pd, numpy as np, json, io, warnings
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+warnings.filterwarnings('ignore')
+df = pd.read_csv(io.StringIO(csv_text))
+required = ['price','area','bedrooms','bathrooms','stories','mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea','furnishingstatus']
+missing_cols=[c for c in required if c not in df.columns]
+if missing_cols: raise ValueError('CSV is missing required columns: '+', '.join(missing_cols))
+# Keep the dataset columns/order exactly as supplied; original notebook uses all columns except price.
+X=df.drop(columns=['price']); y=df['price']
+categorical_features=X.select_dtypes(include=['object','category']).columns.tolist()
+numerical_features=X.select_dtypes(include=np.number).columns.tolist()
+preprocessor=ColumnTransformer(transformers=[('categorical',OneHotEncoder(handle_unknown='ignore',drop='first'),categorical_features),('numerical','passthrough',numerical_features)])
+X_train,X_test,y_train,y_test=train_test_split(X,y,test_size=0.20,random_state=42)
+model=Pipeline(steps=[('preprocessor',preprocessor),('regressor',LinearRegression())])
+model.fit(X_train,y_train); y_pred=model.predict(X_test)
+# Dataset/summary outputs
+numdf=df.select_dtypes(include=np.number); objdf=df.select_dtypes(include=['object','category'])
+def records(frame, maxrows=100):
+    out=[]
+    for row in frame.head(maxrows).itertuples(index=False,name=None):
+        out.append([None if pd.isna(v) else (float(v) if isinstance(v,(np.floating,)) else int(v) if isinstance(v,(np.integer,)) else str(v)) for v in row])
+    return out
+head=df.head().copy()
+numdesc=numdf.describe().round(3).reset_index().rename(columns={'index':'statistic'})
+catdesc=objdf.describe().reset_index().rename(columns={'index':'statistic'})
+miss=df.isnull().sum(); neg=(numdf<0).sum()
+price_mean=float(df['price'].mean()); price_median=float(df['price'].median()); price_min=float(df['price'].min()); price_max=float(df['price'].max())
+# Histogram bins for prices
+hist_counts, hist_edges=np.histogram(df['price'].dropna().astype(float),bins=25)
+hist={'labels':[int((hist_edges[i]+hist_edges[i+1])/2) for i in range(len(hist_edges)-1)],'counts':hist_counts.tolist()}
+scatter=df[['area','price']].dropna().to_numpy().tolist()
+corr=float(df['area'].corr(df['price']))
+avg=df.groupby('furnishingstatus',as_index=False)['price'].mean().sort_values('price',ascending=False)
+mae=float(mean_absolute_error(y_test,y_pred)); rmse=float(np.sqrt(mean_squared_error(y_test,y_pred))); r2=float(r2_score(y_test,y_pred))
+first=[]
+for a,p in zip(y_test.iloc[:10].to_numpy(),y_pred[:10]): first.append([float(a),float(p)])
+actual_pred=[[float(a),float(p)] for a,p in zip(y_test.to_numpy(),y_pred)]
+result={'shape':list(df.shape),'columns':df.columns.tolist(),'dtypes':{c:str(t) for c,t in df.dtypes.items()},'nonnull':{c:int(df[c].notna().sum()) for c in df.columns},'head':{'headers':df.columns.tolist(),'rows':records(head)},'num_summary':{'headers':list(numdesc.columns),'rows':records(numdesc)},'cat_summary':{'headers':list(catdesc.columns),'rows':records(catdesc)},'missing':{c:int(v) for c,v in miss.items()},'missing_total':int(miss.sum()),'duplicates':int(df.duplicated().sum()),'negative':{c:int(v) for c,v in neg.items()},'price_mean':price_mean,'price_median':price_median,'price_min':price_min,'price_max':price_max,'hist':hist,'scatter':scatter,'corr':corr,'furnishing':{'labels':avg['furnishingstatus'].astype(str).tolist(),'values':avg['price'].astype(float).tolist(),'rows':records(avg)},'categorical_features':categorical_features,'numerical_features':numerical_features,'train_n':len(X_train),'test_n':len(X_test),'first10':first,'actual_pred':actual_pred,'mae':mae,'rmse':rmse,'r2':r2,'features':X.columns.tolist()}
+json.dumps(result)
+`;
+let result=null;
+$('runBtn').addEventListener('click',async()=>{if(!ready||!csvText)return;$('runBtn').disabled=true;$('status').textContent='Running data checks, charts and Linear Regression…';try{pyodide.globals.set('csv_text',csvText);let raw=await pyodide.runPythonAsync(pythonCode);result=JSON.parse(raw);render(result);$('status').innerHTML='<span class="good">✓ Project executed successfully.</span> Outputs below are calculated from the uploaded CSV.';$('predictBtn').disabled=false;$('predictModelStatus').textContent='Trained and ready';}catch(e){$('status').innerHTML='<span class="bad">Error:</span> '+esc(e.message);console.error(e)}finally{$('runBtn').disabled=false}});
+function render(r){$('dashRows').textContent=r.shape[0].toLocaleString('en-IN');$('dashAvg').textContent=money(r.price_mean);$('dashR2').textContent=r.r2.toFixed(3);$('dashMae').textContent=money(r.mae);$('downloadPredictionsBtn').disabled=false;$('downloadMetricsBtn').disabled=false;$('loadOutput').innerHTML=`<div class="metrics"><div class="metric"><span>Dataset rows</span><b>${r.shape[0]}</b></div><div class="metric"><span>Columns</span><b>${r.shape[1]}</b></div><div class="metric"><span>Target variable</span><b>price</b></div><div class="metric"><span>Preview</span><b>First 5 rows</b></div></div>${table(r.head.headers,r.head.rows)}`;
+$('structureOutput').innerHTML='<p><b>Column names ('+r.columns.length+'):</b></p><div class="column-list">'+r.columns.map(c=>'<span class="column-chip">'+esc(c)+'</span>').join('')+'</div>'+table(['Column','Non-null count','Data type'],r.columns.map(c=>[c,r.nonnull[c],r.dtypes[c]]));
+$('numSummary').innerHTML=table(r.num_summary.headers,r.num_summary.rows);$('catSummary').innerHTML=table(r.cat_summary.headers,r.cat_summary.rows);
+$('qualityOutput').innerHTML=`<p><b>Total missing values:</b> ${r.missing_total} &nbsp; <b>Duplicate rows:</b> ${r.duplicates}</p><h3>Missing values by column</h3>${table(['Column','Missing values'],Object.entries(r.missing))}<h3>Negative values in numerical columns</h3>${table(['Column','Negative values'],Object.entries(r.negative))}`;
+setChart('priceChart','bar',{labels:r.hist.labels.map(v=>Number(v).toLocaleString('en-IN')) ,datasets:[{label:'Number of houses',data:r.hist.counts}]},{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'House Price (bin midpoint)'},ticks:{maxTicksLimit:7}},y:{title:{display:true,text:'Number of Houses'}}}});
+$('priceStats').innerHTML=`<div class="metrics" style="grid-template-columns:repeat(2,minmax(0,1fr))"><div class="metric"><span>Price mean</span><b>${money(r.price_mean)}</b></div><div class="metric"><span>Price median</span><b>${money(r.price_median)}</b></div><div class="metric"><span>Minimum price</span><b>${money(r.price_min)}</b></div><div class="metric"><span>Maximum price</span><b>${money(r.price_max)}</b></div></div>`;
+setChart('areaChart','scatter',{datasets:[{label:'Houses',data:r.scatter.map(p=>({x:p[0],y:p[1]})),pointRadius:3}]},{plugins:{legend:{display:false}},scales:{x:{title:{display:true,text:'Area'}},y:{title:{display:true,text:'House Price'}}}});$('corrOutput').innerHTML=`<div class="metric"><span>Correlation between area and price</span><b>${r.corr.toFixed(3)}</b></div><p class="muted">Correlation indicates the direction and strength of a linear association; it does not prove causation.</p>`;
+setChart('furnishChart','bar',{labels:r.furnishing.labels,datasets:[{label:'Average house price',data:r.furnishing.values}]},{plugins:{legend:{display:false}},scales:{y:{title:{display:true,text:'Average House Price'}}}});$('furnishOutput').innerHTML=table(['furnishingstatus','price'],r.furnishing.rows);
+$('prepOutput').innerHTML=`<p><b>Categorical features:</b> ${esc(JSON.stringify(r.categorical_features))}</p><p><b>Numerical features:</b> ${esc(JSON.stringify(r.numerical_features))}</p><p>OneHotEncoder uses <code>handle_unknown="ignore"</code> and <code>drop="first"</code>; numeric columns are passed through unchanged.</p>`;
+$('splitOutput').innerHTML=`<div class="metrics"><div class="metric"><span>Training records</span><b>${r.train_n}</b></div><div class="metric"><span>Testing records</span><b>${r.test_n}</b></div><div class="metric"><span>Test size</span><b>20%</b></div><div class="metric"><span>Random state</span><b>42</b></div></div>`;
+$('modelOutput').innerHTML='<p class="good"><b>Model training completed.</b></p><p>Pipeline: ColumnTransformer preprocessing → LinearRegression.</p>';$('predTable').innerHTML=table(['Actual Price','Predicted Price'],r.first10.map(a=>[money(a[0]),money(a[1])]));
+$('metricCards').innerHTML=`<div class="metric"><span>MAE</span><b>${money(r.mae)}</b></div><div class="metric"><span>RMSE</span><b>${money(r.rmse)}</b></div><div class="metric"><span>R² Score</span><b>${r.r2.toFixed(3)}</b></div><div class="metric"><span>Test records</span><b>${r.test_n}</b></div>`;
+setChart('actualChart','scatter',{datasets:[{label:'Actual vs Predicted',data:r.actual_pred.map(p=>({x:p[0],y:p[1]})),pointRadius:3},{label:'Perfect prediction line',data:(()=>{let a=Math.min(...r.actual_pred.map(p=>Math.min(p[0],p[1]))),b=Math.max(...r.actual_pred.map(p=>Math.max(p[0],p[1])));return [{x:a,y:a},{x:b,y:b}]})(),showLine:true,pointRadius:0,borderDash:[6,5]}]},{scales:{x:{title:{display:true,text:'Actual Price'}},y:{title:{display:true,text:'Predicted Price'}}}});
+$('resultDiscussion').innerHTML=`<p><b>MAE:</b> ${money(r.mae)} — average absolute prediction error.</p><p><b>RMSE:</b> ${money(r.rmse)} — gives greater weight to larger errors.</p><p><b>R²:</b> ${r.r2.toFixed(3)} — proportion of variation explained by the model on the test set.</p><p>Predictions are educational estimates, not real-estate valuations.</p>`;
+}
+$('sampleBtn').addEventListener('click',()=>{const sample={area:5000,bedrooms:3,bathrooms:2,stories:2,parking:1,mainroad:'yes',guestroom:'no',basement:'no',hotwaterheating:'no',airconditioning:'yes',prefarea:'yes',furnishingstatus:'semi-furnished'};for(const [k,v] of Object.entries(sample))$('f_'+k).value=v;$('predictionOutput').innerHTML='';});
+$('predictBtn').addEventListener('click',async()=>{if(!result)return;const vals={};for(const k of result.features){const el=$('f_'+k);if(!el){alert('Input not found for feature: '+k);return}const v=el.type==='number'?Number(el.value):el.value;if(el.type==='number'&&(!Number.isFinite(v)||v<Number(el.min||0))){alert('Please enter a valid value for '+k+'.');el.focus();return}vals[k]=v}try{$('predictBtn').disabled=true;$('predictionOutput').innerHTML='<p class="muted">Calculating estimate using the trained model…</p>';pyodide.globals.set('predict_json',JSON.stringify(vals));const predCode=String.raw`import json, pandas as pd
+obj=json.loads(predict_json)
+row=pd.DataFrame([obj],columns=X.columns)
+float(model.predict(row)[0])`;
+const pred=Number(await pyodide.runPythonAsync(predCode));if(!Number.isFinite(pred))throw new Error('The model returned an invalid estimate.');const low=Math.max(0,pred-result.mae),high=pred+result.mae;const avg=result.price_mean;const comparison=pred>=avg?'above':'below';$('predictionOutput').innerHTML=`<div class="prediction-panel"><span class="mini-label">Estimated house price</span><div class="prediction-main">${money(pred)}</div><div class="prediction-sub">Model estimate based on the selected property details</div><div class="prediction-stats"><div class="prediction-stat"><span>Illustrative lower estimate</span><b>${money(low)}</b></div><div class="prediction-stat"><span>Illustrative upper estimate</span><b>${money(high)}</b></div><div class="prediction-stat"><span>Dataset average price</span><b>${money(avg)}</b></div></div><p class="prediction-sub" style="margin-top:12px">This estimate is ${comparison} the dataset's average price. The comparison is descriptive only and is not a market valuation.</p></div>`}catch(e){$('predictionOutput').innerHTML='<p class="bad">Could not predict: '+esc(e.message)+'</p>'}finally{$('predictBtn').disabled=!result}});
+function downloadCSV(filename, rows){const csv=rows.map(row=>row.map(value=>{const v=String(value==null?'':value);return /[",\n\r]/.test(v)?'"'+v.replace(/"/g,'""')+'"':v}).join(',')).join('\r\n');const blob=new Blob(['\ufeff'+csv],{type:'text/csv;charset=utf-8;'});const url=URL.createObjectURL(blob);const a=document.createElement('a');a.href=url;a.download=filename;document.body.appendChild(a);a.click();a.remove();URL.revokeObjectURL(url)}
+$('downloadPredictionsBtn').addEventListener('click',()=>{if(!result)return;downloadCSV('SMLDS_test_predictions.csv',[['Actual Price','Predicted Price','Absolute Error'],...result.actual_pred.map(([actual,pred])=>[actual,pred,Math.abs(actual-pred)])])});
+$('downloadMetricsBtn').addEventListener('click',()=>{if(!result)return;downloadCSV('SMLDS_model_metrics.csv',[['Metric','Value'],['MAE',result.mae],['RMSE',result.rmse],['R2 Score',result.r2],['Training records',result.train_n],['Testing records',result.test_n],['Dataset rows',result.shape[0]],['Dataset columns',result.shape[1]],['Price mean',result.price_mean],['Price median',result.price_median],['Area-price correlation',result.corr]])});
+init();
+</script></body></html>
