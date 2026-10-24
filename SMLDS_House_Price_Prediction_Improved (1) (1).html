@@ -1,0 +1,2592 @@
+<!DOCTYPE html>
+<html lang="en" data-theme="light">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>House Price Prediction — Supervised Machine Learning & Data Science</title>
+  
+  <!-- Chart.js, XLSX, Pyodide CDN -->
+  <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.4/dist/chart.umd.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/npm/xlsx@0.18.5/dist/xlsx.full.min.js"></script>
+  <script src="https://cdn.jsdelivr.net/pyodide/v0.27.7/full/pyodide.js"></script>
+
+  <style>
+    :root {
+      --bg: #f8fafc;
+      --card: #ffffff;
+      --card-border: #e2e8f0;
+      --text: #0f172a;
+      --text-muted: #64748b;
+      --primary: #2563eb;
+      --primary-hover: #1d4ed8;
+      --primary-light: #eff6ff;
+      --accent-green: #10b981;
+      --accent-green-light: #ecfdf5;
+      --accent-red: #ef4444;
+      --accent-red-light: #fef2f2;
+      --accent-amber: #f59e0b;
+      --accent-purple: #8b5cf6;
+      --code-bg: #0f172a;
+      --code-text: #f8fafc;
+      --header-grad: linear-gradient(135deg, #0f172a 0%, #1e3a8a 50%, #2563eb 100%);
+      --shadow-sm: 0 1px 2px 0 rgb(0 0 0 / 0.05);
+      --shadow-md: 0 4px 6px -1px rgb(0 0 0 / 0.1), 0 2px 4px -2px rgb(0 0 0 / 0.1);
+      --shadow-lg: 0 10px 15px -3px rgb(0 0 0 / 0.1), 0 4px 6px -4px rgb(0 0 0 / 0.1);
+      --radius: 14px;
+    }
+
+    [data-theme="dark"] {
+      --bg: #0b0f19;
+      --card: #131b2e;
+      --card-border: #1e293b;
+      --text: #f8fafc;
+      --text-muted: #94a3b8;
+      --primary: #3b82f6;
+      --primary-hover: #60a5fa;
+      --primary-light: #1e293b;
+      --accent-green: #34d399;
+      --accent-green-light: #064e3b;
+      --accent-red: #f87171;
+      --accent-red-light: #450a0a;
+      --accent-amber: #fbbf24;
+      --code-bg: #090d16;
+      --header-grad: linear-gradient(135deg, #030712 0%, #0f172a 50%, #1e293b 100%);
+    }
+
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      font-family: system-ui, -apple-system, BlinkMacSystemFont, 'Segoe UI', Roboto, Helvetica, Arial, sans-serif;
+      background: var(--bg);
+      color: var(--text);
+      line-height: 1.6;
+      transition: background 0.25s ease, color 0.25s ease;
+      min-height: 100vh;
+      display: flex;
+      flex-direction: column;
+    }
+
+    /* Header */
+    header.hero {
+      background: var(--header-grad);
+      color: #ffffff;
+      padding: 30px 24px 24px;
+      position: relative;
+      box-shadow: var(--shadow-md);
+    }
+    .hero-wrap {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      justify-content: space-between;
+      align-items: center;
+      gap: 16px;
+    }
+    .hero-title-area { max-width: 780px; }
+    .badge-pill {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      background: rgba(255, 255, 255, 0.15);
+      backdrop-filter: blur(8px);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      padding: 4px 12px;
+      border-radius: 9999px;
+      font-size: 11px;
+      font-weight: 600;
+      letter-spacing: 0.05em;
+      text-transform: uppercase;
+      margin-bottom: 8px;
+    }
+    .hero h1 {
+      font-size: clamp(24px, 3.5vw, 36px);
+      font-weight: 800;
+      line-height: 1.2;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .hero p {
+      font-size: 14px;
+      color: #e2e8f0;
+      opacity: 0.92;
+    }
+    .hero-actions {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+    }
+
+    /* Engine Status */
+    .engine-status-badge {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 7px 14px;
+      border-radius: 30px;
+      font-size: 13px;
+      font-weight: 600;
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.2);
+      backdrop-filter: blur(8px);
+    }
+    .status-dot {
+      width: 9px;
+      height: 9px;
+      border-radius: 50%;
+      background: #fbbf24;
+      box-shadow: 0 0 8px #fbbf24;
+      animation: pulse 1.8s infinite;
+    }
+    .status-dot.ready { background: #34d399; box-shadow: 0 0 8px #34d399; animation: none; }
+    .status-dot.running { background: #60a5fa; box-shadow: 0 0 8px #60a5fa; }
+    .status-dot.error { background: #f87171; box-shadow: 0 0 8px #f87171; animation: none; }
+
+    @keyframes pulse {
+      0%, 100% { opacity: 1; transform: scale(1); }
+      50% { opacity: 0.4; transform: scale(0.85); }
+    }
+
+    .btn-icon {
+      background: rgba(255, 255, 255, 0.15);
+      border: 1px solid rgba(255, 255, 255, 0.25);
+      color: #fff;
+      padding: 8px 12px;
+      border-radius: 10px;
+      cursor: pointer;
+      font-size: 13px;
+      font-weight: 600;
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      transition: all 0.2s;
+    }
+    .btn-icon:hover { background: rgba(255, 255, 255, 0.28); transform: translateY(-1px); }
+
+    /* Action bar / Dataset banner */
+    .dataset-bar {
+      background: var(--card);
+      border-bottom: 1px solid var(--card-border);
+      padding: 12px 24px;
+      position: sticky;
+      top: 0;
+      z-index: 40;
+      box-shadow: var(--shadow-sm);
+    }
+    .dataset-bar-inner {
+      max-width: 1280px;
+      margin: 0 auto;
+      display: flex;
+      flex-wrap: wrap;
+      align-items: center;
+      justify-content: space-between;
+      gap: 12px;
+    }
+    .dataset-info {
+      display: flex;
+      align-items: center;
+      gap: 10px;
+      font-size: 13px;
+      font-weight: 500;
+    }
+    .dataset-tag {
+      background: var(--primary-light);
+      color: var(--primary);
+      padding: 3px 10px;
+      border-radius: 6px;
+      font-weight: 600;
+      font-size: 12px;
+    }
+    .btn-group { display: flex; flex-wrap: wrap; gap: 8px; align-items: center; }
+
+    /* Buttons */
+    .btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 6px;
+      padding: 8px 16px;
+      border-radius: 8px;
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      border: none;
+      transition: all 0.15s ease;
+      text-decoration: none;
+    }
+    .btn-primary {
+      background: var(--primary);
+      color: #ffffff;
+      box-shadow: 0 1px 3px rgba(37, 99, 235, 0.3);
+    }
+    .btn-primary:hover:not(:disabled) {
+      background: var(--primary-hover);
+      transform: translateY(-1px);
+    }
+    .btn-outline {
+      background: transparent;
+      color: var(--text);
+      border: 1px solid var(--card-border);
+    }
+    .btn-outline:hover:not(:disabled) {
+      background: var(--bg);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .btn:disabled {
+      opacity: 0.5;
+      cursor: not-allowed;
+      transform: none !important;
+    }
+
+    /* Main Container & Tabs */
+    .main-wrap {
+      max-width: 1280px;
+      width: 100%;
+      margin: 20px auto 40px;
+      padding: 0 20px;
+      flex: 1;
+    }
+
+    /* Tab navigation */
+    .nav-tabs {
+      display: flex;
+      gap: 6px;
+      border-bottom: 2px solid var(--card-border);
+      margin-bottom: 24px;
+      overflow-x: auto;
+      scrollbar-width: none;
+      padding-bottom: 2px;
+    }
+    .nav-tabs::-webkit-scrollbar { display: none; }
+    .tab-btn {
+      display: inline-flex;
+      align-items: center;
+      gap: 8px;
+      padding: 10px 18px;
+      border-radius: 10px 10px 0 0;
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      background: transparent;
+      border: none;
+      cursor: pointer;
+      white-space: nowrap;
+      transition: all 0.2s ease;
+      position: relative;
+    }
+    .tab-btn:hover { color: var(--text); background: var(--card); }
+    .tab-btn.active {
+      color: var(--primary);
+      background: var(--card);
+    }
+    .tab-btn.active::after {
+      content: '';
+      position: absolute;
+      bottom: -2px;
+      left: 0;
+      right: 0;
+      height: 3px;
+      background: var(--primary);
+      border-radius: 3px 3px 0 0;
+    }
+
+    /* Tab panels */
+    .tab-content { display: none; }
+    .tab-content.active { display: block; animation: fadeIn 0.2s ease; }
+    @keyframes fadeIn { from { opacity: 0; transform: translateY(4px); } to { opacity: 1; transform: translateY(0); } }
+
+    /* Cards */
+    .card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 22px;
+      margin-bottom: 20px;
+      box-shadow: var(--shadow-sm);
+    }
+    .card-header {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      margin-bottom: 16px;
+      padding-bottom: 12px;
+      border-bottom: 1px solid var(--card-border);
+    }
+    .card-title {
+      font-size: 18px;
+      font-weight: 700;
+      display: flex;
+      align-items: center;
+      gap: 8px;
+    }
+    .card-subtitle {
+      font-size: 13px;
+      color: var(--text-muted);
+      margin-top: 2px;
+    }
+
+    /* KPI Grid */
+    .kpi-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(240px, 1fr));
+      gap: 16px;
+      margin-bottom: 24px;
+    }
+    .kpi-card {
+      background: var(--card);
+      border: 1px solid var(--card-border);
+      border-radius: var(--radius);
+      padding: 18px 20px;
+      box-shadow: var(--shadow-sm);
+      position: relative;
+      overflow: hidden;
+      display: flex;
+      flex-direction: column;
+      justify-content: space-between;
+    }
+    .kpi-card::before {
+      content: '';
+      position: absolute;
+      top: 0;
+      left: 0;
+      right: 0;
+      height: 4px;
+      background: var(--primary);
+    }
+    .kpi-card.green::before { background: var(--accent-green); }
+    .kpi-card.purple::before { background: var(--accent-purple); }
+    .kpi-card.amber::before { background: var(--accent-amber); }
+    .kpi-label { font-size: 13px; font-weight: 600; color: var(--text-muted); }
+    .kpi-value {
+      font-size: 28px;
+      font-weight: 800;
+      margin: 6px 0 2px;
+      letter-spacing: -0.02em;
+    }
+    .kpi-sub { font-size: 12px; color: var(--text-muted); }
+
+    /* Workflow Pills */
+    .pipeline-steps {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+      gap: 12px;
+      margin: 16px 0;
+    }
+    .pipeline-step {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 14px;
+      text-align: center;
+    }
+    .pipeline-step b { display: block; font-size: 14px; margin-bottom: 4px; }
+    .pipeline-step span { font-size: 12px; color: var(--text-muted); }
+
+    /* Charts Grid */
+    .grid-2 {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(460px, 1fr));
+      gap: 20px;
+      margin-bottom: 20px;
+    }
+    .chart-box {
+      position: relative;
+      height: 320px;
+      width: 100%;
+    }
+
+    /* Tables */
+    .table-container {
+      width: 100%;
+      overflow-x: auto;
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      margin-top: 10px;
+    }
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 13px;
+      text-align: left;
+    }
+    th {
+      background: var(--bg);
+      color: var(--text-muted);
+      font-weight: 600;
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+    td {
+      padding: 10px 14px;
+      border-bottom: 1px solid var(--card-border);
+      white-space: nowrap;
+    }
+    tr:last-child td { border-bottom: none; }
+    tbody tr:hover { background: var(--bg); }
+
+    /* Benchmarking table pills */
+    .badge-model {
+      display: inline-block;
+      padding: 2px 8px;
+      border-radius: 6px;
+      font-size: 11px;
+      font-weight: 600;
+      background: var(--primary-light);
+      color: var(--primary);
+    }
+    .badge-best {
+      background: var(--accent-green-light);
+      color: var(--accent-green);
+    }
+
+    /* Interactive Simulator */
+    .simulator-grid {
+      display: grid;
+      grid-template-columns: 1.2fr 0.8fr;
+      gap: 24px;
+      align-items: start;
+    }
+    @media (max-width: 960px) {
+      .simulator-grid { grid-template-columns: 1fr; }
+      .grid-2 { grid-template-columns: 1fr; }
+    }
+
+    .form-group {
+      margin-bottom: 16px;
+    }
+    .form-label {
+      display: flex;
+      justify-content: space-between;
+      align-items: center;
+      font-size: 13px;
+      font-weight: 600;
+      margin-bottom: 6px;
+    }
+    .form-label span.val-badge {
+      font-size: 13px;
+      font-weight: 700;
+      color: var(--primary);
+      background: var(--primary-light);
+      padding: 2px 8px;
+      border-radius: 6px;
+    }
+    input[type="range"] {
+      width: 100%;
+      height: 6px;
+      border-radius: 4px;
+      background: var(--card-border);
+      outline: none;
+      accent-color: var(--primary);
+      cursor: pointer;
+    }
+    .stepper-row {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+      gap: 12px;
+      margin-bottom: 16px;
+    }
+    .stepper-box {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 10px 12px;
+      text-align: center;
+    }
+    .stepper-box label {
+      display: block;
+      font-size: 12px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 6px;
+    }
+    .stepper-ctrls {
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      gap: 8px;
+    }
+    .stepper-btn {
+      width: 28px;
+      height: 28px;
+      border-radius: 6px;
+      border: 1px solid var(--card-border);
+      background: var(--card);
+      color: var(--text);
+      font-size: 15px;
+      font-weight: 700;
+      cursor: pointer;
+      display: flex;
+      align-items: center;
+      justify-content: center;
+      transition: all 0.1s;
+    }
+    .stepper-btn:hover { background: var(--primary); color: #fff; border-color: var(--primary); }
+    .stepper-val {
+      font-size: 16px;
+      font-weight: 700;
+      width: 28px;
+      text-align: center;
+    }
+
+    /* Amenity Chips */
+    .chips-grid {
+      display: grid;
+      grid-template-columns: repeat(auto-fit, minmax(140px, 1fr));
+      gap: 10px;
+      margin-bottom: 16px;
+    }
+    .chip-toggle {
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+      gap: 6px;
+      padding: 10px 12px;
+      border-radius: 10px;
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      font-size: 13px;
+      font-weight: 600;
+      cursor: pointer;
+      user-select: none;
+      transition: all 0.15s ease;
+    }
+    .chip-toggle.active {
+      background: var(--primary-light);
+      border-color: var(--primary);
+      color: var(--primary);
+    }
+    .chip-indicator {
+      width: 16px;
+      height: 16px;
+      border-radius: 50%;
+      border: 2px solid var(--card-border);
+      display: flex;
+      align-items: center;
+      justify-content: center;
+    }
+    .chip-toggle.active .chip-indicator {
+      border-color: var(--primary);
+      background: var(--primary);
+    }
+    .chip-toggle.active .chip-indicator::after {
+      content: '✓';
+      color: #fff;
+      font-size: 10px;
+      font-weight: 800;
+    }
+
+    /* Segmented selector */
+    .segmented-ctrl {
+      display: flex;
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 3px;
+      gap: 4px;
+    }
+    .seg-btn {
+      flex: 1;
+      padding: 8px 12px;
+      border-radius: 7px;
+      font-size: 13px;
+      font-weight: 600;
+      background: transparent;
+      border: none;
+      color: var(--text-muted);
+      cursor: pointer;
+      transition: all 0.15s;
+    }
+    .seg-btn.active {
+      background: var(--card);
+      color: var(--primary);
+      box-shadow: var(--shadow-sm);
+    }
+
+    /* Valuation Result Card */
+    .valuation-card {
+      background: var(--card);
+      border: 2px solid var(--primary);
+      border-radius: var(--radius);
+      padding: 24px;
+      box-shadow: var(--shadow-md);
+      position: sticky;
+      top: 75px;
+    }
+    .val-header {
+      font-size: 12px;
+      text-transform: uppercase;
+      font-weight: 700;
+      letter-spacing: 0.05em;
+      color: var(--text-muted);
+      margin-bottom: 4px;
+    }
+    .val-price-hero {
+      font-size: clamp(32px, 3.5vw, 44px);
+      font-weight: 800;
+      color: var(--primary);
+      line-height: 1.1;
+      margin-bottom: 6px;
+      letter-spacing: -0.02em;
+    }
+    .val-price-full {
+      font-size: 14px;
+      font-weight: 600;
+      color: var(--text-muted);
+      margin-bottom: 16px;
+    }
+    .val-range-box {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 12px 14px;
+      margin-bottom: 16px;
+    }
+    .val-range-label { font-size: 11px; font-weight: 600; color: var(--text-muted); text-transform: uppercase; }
+    .val-range-nums { font-size: 14px; font-weight: 700; color: var(--text); margin-top: 2px; }
+
+    .val-drivers-list {
+      border-top: 1px solid var(--card-border);
+      padding-top: 14px;
+    }
+    .val-driver-item {
+      display: flex;
+      justify-content: space-between;
+      font-size: 12px;
+      margin-bottom: 6px;
+    }
+    .val-driver-item span:first-child { color: var(--text-muted); }
+    .val-driver-item span.pos { color: var(--accent-green); font-weight: 600; }
+    .val-driver-item span.neg { color: var(--accent-red); font-weight: 600; }
+
+    /* Presets row */
+    .presets-row {
+      display: flex;
+      flex-wrap: wrap;
+      gap: 8px;
+      margin-bottom: 16px;
+    }
+    .preset-pill {
+      font-size: 12px;
+      padding: 6px 12px;
+      border-radius: 20px;
+      border: 1px solid var(--card-border);
+      background: var(--bg);
+      color: var(--text);
+      cursor: pointer;
+      font-weight: 600;
+      transition: all 0.15s;
+    }
+    .preset-pill:hover { border-color: var(--primary); color: var(--primary); }
+
+    /* Code accordions */
+    details {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      margin-bottom: 12px;
+      overflow: hidden;
+    }
+    summary {
+      padding: 12px 16px;
+      font-weight: 600;
+      font-size: 13px;
+      cursor: pointer;
+      user-select: none;
+      display: flex;
+      align-items: center;
+      justify-content: space-between;
+    }
+    summary:hover { background: var(--card); }
+    pre {
+      background: var(--code-bg);
+      color: var(--code-text);
+      padding: 16px;
+      font-size: 12px;
+      overflow-x: auto;
+      line-height: 1.5;
+      font-family: 'SFMono-Regular', Consolas, 'Liberation Mono', Menlo, monospace;
+    }
+
+    /* Viva Q&A */
+    .viva-item {
+      background: var(--bg);
+      border: 1px solid var(--card-border);
+      border-radius: 10px;
+      padding: 16px;
+      margin-bottom: 12px;
+    }
+    .viva-q { font-size: 14px; font-weight: 700; color: var(--primary); margin-bottom: 6px; }
+    .viva-a { font-size: 13px; color: var(--text); }
+
+    /* Footer */
+    footer {
+      background: var(--card);
+      border-top: 1px solid var(--card-border);
+      padding: 20px 24px;
+      font-size: 13px;
+      color: var(--text-muted);
+      text-align: center;
+      margin-top: auto;
+    }
+
+    /* Print Stylesheet */
+    @media print {
+      body { background: #fff !important; color: #000 !important; font-size: 10pt; }
+      header.hero { background: none !important; color: #000 !important; border-bottom: 2px solid #000; padding: 10px 0; }
+      .hero-actions, .dataset-bar, .nav-tabs, .btn-group, .simulator-grid, .btn-icon, footer { display: none !important; }
+      .tab-content { display: block !important; opacity: 1 !important; page-break-after: always; }
+      .card { border: 1px solid #ccc !important; box-shadow: none !important; page-break-inside: avoid; }
+      .chart-box { height: 260px !important; }
+    }
+  </style>
+</head>
+<body>
+
+  <!-- HERO HEADER -->
+  <header class="hero">
+    <div class="hero-wrap">
+      <div class="hero-title-area">
+        <div class="badge-pill">SMLDS Mini Project • Supervised Learning — Regression</div>
+        <h1>🏡 House Price Intelligence & Prediction</h1>
+        <p>Interactive end-to-end Machine Learning system running directly in your browser using Python (Pyodide), scikit-learn, and Chart.js. Covers EDA, Preprocessing, Benchmarking 4 Algorithms, Diagnostics, and Real-Time Valuation.</p>
+      </div>
+      <div class="hero-actions">
+        <div class="engine-status-badge" id="engineStatusBadge">
+          <div class="status-dot" id="statusDot"></div>
+          <span id="engineStatusText">Initializing WebAssembly Python...</span>
+        </div>
+        <button class="btn-icon" id="themeToggleBtn" title="Toggle Dark/Light Mode">🌙 Theme</button>
+        <button class="btn-icon" onclick="window.print()" title="Print or save as PDF">🖨️ PDF Report</button>
+      </div>
+    </div>
+  </header>
+
+  <!-- DATASET CONTROL BAR -->
+  <div class="dataset-bar">
+    <div class="dataset-bar-inner">
+      <div class="dataset-info">
+        <span class="dataset-tag" id="datasetNameBadge">Default Housing.csv (545 rows)</span>
+        <span id="datasetSummaryStatus">Embedded dataset loaded and ready</span>
+      </div>
+      <div class="btn-group">
+        <button class="btn btn-primary" id="runPipelineBtn" disabled>⚡ Run Pipeline</button>
+        <label class="btn btn-outline" style="cursor: pointer;">
+          📁 Upload Custom File
+          <input type="file" id="fileUploadInput" accept=".csv,.xlsx,.xls" style="display:none;">
+        </label>
+        <button class="btn btn-outline" id="dlPredictionsBtn" disabled>⬇ Test Predictions CSV</button>
+        <button class="btn btn-outline" id="dlMetricsBtn" disabled>⬇ Model Metrics CSV</button>
+      </div>
+    </div>
+  </div>
+
+  <!-- MAIN WRAPPER -->
+  <main class="main-wrap">
+    
+    <!-- TABS NAVIGATION -->
+    <nav class="nav-tabs" role="tablist">
+      <button class="tab-btn active" data-tab="tab-dashboard">📊 Dashboard</button>
+      <button class="tab-btn" data-tab="tab-eda">📈 Exploratory Data Analysis</button>
+      <button class="tab-btn" data-tab="tab-models">⚙️ Model Comparison & Diagnostics</button>
+      <button class="tab-btn" data-tab="tab-simulator">🔮 Live Price Estimator</button>
+      <button class="tab-btn" data-tab="tab-code">📋 Code & Viva Guide</button>
+    </nav>
+
+    <!-- TAB 1: DASHBOARD -->
+    <section id="tab-dashboard" class="tab-content active">
+      <!-- 4 Hero KPIs -->
+      <div class="kpi-grid">
+        <div class="kpi-card">
+          <span class="kpi-label">Dataset Records</span>
+          <div class="kpi-value" id="kpiRows">545</div>
+          <div class="kpi-sub">Properties loaded across 13 columns</div>
+        </div>
+        <div class="kpi-card green">
+          <span class="kpi-label">Average House Price</span>
+          <div class="kpi-value" id="kpiAvgPrice">₹47.67 L</div>
+          <div class="kpi-sub" id="kpiAvgPriceFull">₹4,766,729 mean property value</div>
+        </div>
+        <div class="kpi-card purple">
+          <span class="kpi-label">Top Model R² Score</span>
+          <div class="kpi-value" id="kpiR2">0.655</div>
+          <div class="kpi-sub" id="kpiBestModel">Gradient Boosting / Linear Regression</div>
+        </div>
+        <div class="kpi-card amber">
+          <span class="kpi-label">Mean Absolute Error (MAE)</span>
+          <div class="kpi-value" id="kpiMae">₹9.70 L</div>
+          <div class="kpi-sub">Average test prediction difference</div>
+        </div>
+      </div>
+
+      <!-- Overview & Data Health -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📌 Problem Statement & Data Quality Health</div>
+            <div class="card-subtitle">Regression objective and initial dataset validation</div>
+          </div>
+          <span class="badge-pill" style="color:var(--text); background:var(--accent-green-light); border:none;">Data Quality: 100% Clean</span>
+        </div>
+        <p style="margin-bottom: 14px;">
+          The objective of this project is to develop an empirical machine learning regression model that accurately estimates residential property market prices based on physical attributes (area, bedrooms, bathrooms, stories, parking) and amenities (main road access, basement, air conditioning, preferred area, furnishing status).
+        </p>
+
+        <div style="display: grid; grid-template-columns: repeat(auto-fit, minmax(180px, 1fr)); gap: 12px; margin-bottom: 16px;">
+          <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--card-border);">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:600;">MISSING VALUES</div>
+            <div style="font-size:20px; font-weight:800; color:var(--accent-green);" id="healthMissing">0 (0.0%)</div>
+          </div>
+          <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--card-border);">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:600;">DUPLICATE ROWS</div>
+            <div style="font-size:20px; font-weight:800; color:var(--accent-green);" id="healthDuplicates">0</div>
+          </div>
+          <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--card-border);">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:600;">NEGATIVE NUMBERS</div>
+            <div style="font-size:20px; font-weight:800; color:var(--accent-green);" id="healthNegative">0</div>
+          </div>
+          <div style="background:var(--bg); padding:12px; border-radius:8px; border:1px solid var(--card-border);">
+            <div style="font-size:11px; color:var(--text-muted); font-weight:600;">TRAIN / TEST SPLIT</div>
+            <div style="font-size:20px; font-weight:800; color:var(--primary);" id="healthSplit">436 : 109 (80:20)</div>
+          </div>
+        </div>
+
+        <div class="card-title" style="font-size: 15px; margin-top: 18px;">🔄 End-to-End Supervised ML Pipeline</div>
+        <div class="pipeline-steps">
+          <div class="pipeline-step"><b>1. Ingestion</b><span>Housing.csv (545 × 13)</span></div>
+          <div class="pipeline-step"><b>2. Quality Checks</b><span>Null & duplicate scan</span></div>
+          <div class="pipeline-step"><b>3. Preprocessing</b><span>One-Hot Encoding (drop first)</span></div>
+          <div class="pipeline-step"><b>4. Model Training</b><span>OLS, Ridge, RF, GBDT</span></div>
+          <div class="pipeline-step"><b>5. Diagnostics</b><span>R², MAE, RMSE & Residuals</span></div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 2: EXPLORATORY DATA ANALYSIS -->
+    <section id="tab-eda" class="tab-content">
+      <div class="grid-2">
+        <!-- Chart 1: Price Distribution -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">1. Distribution of House Prices</div>
+              <div class="card-subtitle">Histogram showing price density and right-skewness</div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="chartPriceHist"></canvas></div>
+          <div style="font-size: 12px; color:var(--text-muted); margin-top: 10px;" id="histStatsText">
+            Mean: ₹47.67L | Median: ₹43.40L | Min: ₹17.50L | Max: ₹133.00L
+          </div>
+        </div>
+
+        <!-- Chart 2: Area vs Price -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">2. Built-up Area vs. House Price</div>
+              <div class="card-subtitle">Scatter plot illustrating positive linear correlation</div>
+            </div>
+            <span class="badge-pill" id="corrBadge" style="background:var(--primary-light); color:var(--primary); border:none;">r = +0.536</span>
+          </div>
+          <div class="chart-box"><canvas id="chartAreaScatter"></canvas></div>
+          <div style="font-size: 12px; color:var(--text-muted); margin-top: 10px;">
+            A strong positive linear correlation (r = 0.536) exists: larger built-up area systematically drives higher property value.
+          </div>
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Chart 3: Furnishing Status -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">3. Average Price by Furnishing Status</div>
+              <div class="card-subtitle">Comparison across Furnished, Semi-Furnished & Unfurnished</div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="chartFurnishing"></canvas></div>
+        </div>
+
+        <!-- Chart 4: Correlation Matrix -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">4. Numerical Feature Correlations</div>
+              <div class="card-subtitle">Pearson correlation coefficients with property price</div>
+            </div>
+          </div>
+          <div class="chart-box"><canvas id="chartCorrBar"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Raw Dataset Table Explorer -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📋 Dataset Sample Explorer</div>
+            <div class="card-subtitle">Browse records from the uploaded Housing dataset</div>
+          </div>
+          <input type="text" id="tableSearchInput" placeholder="🔍 Search records..." style="padding:6px 12px; border-radius:6px; border:1px solid var(--card-border); background:var(--bg); color:var(--text); font-size:13px;">
+        </div>
+        <div class="table-container" id="rawDataTableWrap">
+          <table id="rawDataTable">
+            <thead><tr id="tableHeaders"></tr></thead>
+            <tbody id="tableBody"></tbody>
+          </table>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 3: MODEL COMPARISON & DIAGNOSTICS -->
+    <section id="tab-models" class="tab-content">
+      <!-- Benchmark Table -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">⚖️ Supervised Model Benchmarking</div>
+            <div class="card-subtitle">Evaluating 4 distinct regression algorithms on the identical 80:20 split</div>
+          </div>
+        </div>
+        <div class="table-container">
+          <table id="benchmarkTable">
+            <thead>
+              <tr>
+                <th>Algorithm</th>
+                <th>Model Paradigm</th>
+                <th>Test R² Score</th>
+                <th>Train R² Score</th>
+                <th>MAE (₹)</th>
+                <th>RMSE (₹)</th>
+                <th>Status / Best Fit</th>
+              </tr>
+            </thead>
+            <tbody id="benchmarkTableBody">
+              <!-- Populated by JS -->
+            </tbody>
+          </table>
+        </div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">
+          Note: An R² score of ~0.65 indicates that approximately 65.3% of the variance in house prices is captured by the given 12 features. The remaining ~35% variance is due to unobserved factors (specific neighborhood, floor level, building age, view).
+        </div>
+      </div>
+
+      <div class="grid-2">
+        <!-- Feature Impact (Linear Regression Coefficients) -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">📊 Feature Valuation Impact (Coefficients)</div>
+              <div class="card-subtitle">Exact ₹ addition / reduction per amenity (Linear Regression)</div>
+            </div>
+          </div>
+          <div class="chart-box" style="height: 380px;"><canvas id="chartFeatureImpact"></canvas></div>
+        </div>
+
+        <!-- Actual vs Predicted -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🎯 Actual vs. Predicted House Prices</div>
+              <div class="card-subtitle">Test set points compared against ideal 45° diagonal</div>
+            </div>
+          </div>
+          <div class="chart-box" style="height: 380px;"><canvas id="chartActualVsPred"></canvas></div>
+        </div>
+      </div>
+
+      <!-- Residual Diagnostics -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">📉 Residuals vs. Fitted Diagnostic Plot</div>
+            <div class="card-subtitle">Verifying homoscedasticity and error distribution (Actual − Predicted)</div>
+          </div>
+        </div>
+        <div class="chart-box" style="height: 280px;"><canvas id="chartResiduals"></canvas></div>
+        <div style="font-size: 12px; color: var(--text-muted); margin-top: 10px;">
+          <b>Diagnostic Interpretation:</b> Residuals are clustered symmetrically around zero. A mild rightward fan reflects greater variance for luxury homes above ₹1 Crore, which could be regularized further using a log-price transformation.
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 4: INTERACTIVE PRICE ESTIMATOR -->
+    <section id="tab-simulator" class="tab-content">
+      <div class="simulator-grid">
+        <!-- Configuration Controls -->
+        <div class="card">
+          <div class="card-header">
+            <div>
+              <div class="card-title">🎛️ Property Configuration</div>
+              <div class="card-subtitle">Adjust property specifications to see real-time price response</div>
+            </div>
+          </div>
+
+          <!-- Quick Presets -->
+          <div class="form-group">
+            <label class="form-label">Quick Profile Presets</label>
+            <div class="presets-row">
+              <button type="button" class="preset-pill" onclick="loadPreset('compact')">🏢 Compact 2BHK (₹36.8L)</button>
+              <button type="button" class="preset-pill" onclick="loadPreset('family')">🏡 Typical Family 3BHK (₹58.5L)</button>
+              <button type="button" class="preset-pill" onclick="loadPreset('luxury')">🏰 Luxury Villa 4BHK (₹92.4L)</button>
+            </div>
+          </div>
+
+          <!-- Built-up Area Slider -->
+          <div class="form-group">
+            <div class="form-label">
+              <span>Built-up Area (Sq. Ft.)</span>
+              <span class="val-badge" id="lblArea">5,000 sq ft</span>
+            </div>
+            <input type="range" id="simArea" min="1000" max="16000" step="50" value="5000">
+            <div style="display:flex; justify-content:space-between; font-size:11px; color:var(--text-muted); margin-top:4px;">
+              <span>1,000 sq ft</span>
+              <span>8,500 sq ft</span>
+              <span>16,000 sq ft</span>
+            </div>
+          </div>
+
+          <!-- Steppers for Rooms & Layout -->
+          <div class="stepper-row">
+            <div class="stepper-box">
+              <label>🛏️ Bedrooms</label>
+              <div class="stepper-ctrls">
+                <button type="button" class="stepper-btn" onclick="stepVal('simBedrooms', -1, 1, 6)">−</button>
+                <span class="stepper-val" id="valBedrooms">3</span>
+                <button type="button" class="stepper-btn" onclick="stepVal('simBedrooms', 1, 1, 6)">+</button>
+              </div>
+            </div>
+
+            <div class="stepper-box">
+              <label>🛁 Bathrooms</label>
+              <div class="stepper-ctrls">
+                <button type="button" class="stepper-btn" onclick="stepVal('simBathrooms', -1, 1, 4)">−</button>
+                <span class="stepper-val" id="valBathrooms">2</span>
+                <button type="button" class="stepper-btn" onclick="stepVal('simBathrooms', 1, 1, 4)">+</button>
+              </div>
+            </div>
+
+            <div class="stepper-box">
+              <label>🏢 Stories</label>
+              <div class="stepper-ctrls">
+                <button type="button" class="stepper-btn" onclick="stepVal('simStories', -1, 1, 4)">−</button>
+                <span class="stepper-val" id="valStories">2</span>
+                <button type="button" class="stepper-btn" onclick="stepVal('simStories', 1, 1, 4)">+</button>
+              </div>
+            </div>
+
+            <div class="stepper-box">
+              <label>🚗 Parking</label>
+              <div class="stepper-ctrls">
+                <button type="button" class="stepper-btn" onclick="stepVal('simParking', -1, 0, 3)">−</button>
+                <span class="stepper-val" id="valParking">1</span>
+                <button type="button" class="stepper-btn" onclick="stepVal('simParking', 1, 0, 3)">+</button>
+              </div>
+            </div>
+          </div>
+
+          <!-- Hidden storage inputs for steppers -->
+          <input type="hidden" id="simBedrooms" value="3">
+          <input type="hidden" id="simBathrooms" value="2">
+          <input type="hidden" id="simStories" value="2">
+          <input type="hidden" id="simParking" value="1">
+
+          <!-- Amenity Toggles -->
+          <div class="form-group">
+            <label class="form-label">Amenities & Location Highlights</label>
+            <div class="chips-grid">
+              <div class="chip-toggle active" id="chip_mainroad" onclick="toggleChip('chip_mainroad')">
+                <span>🛣️ Main Road</span>
+                <div class="chip-indicator"></div>
+              </div>
+              <div class="chip-toggle active" id="chip_airconditioning" onclick="toggleChip('chip_airconditioning')">
+                <span>❄️ Air Conditioning</span>
+                <div class="chip-indicator"></div>
+              </div>
+              <div class="chip-toggle" id="chip_basement" onclick="toggleChip('chip_basement')">
+                <span>🏠 Basement</span>
+                <div class="chip-indicator"></div>
+              </div>
+              <div class="chip-toggle" id="chip_guestroom" onclick="toggleChip('chip_guestroom')">
+                <span>🛋️ Guest Room</span>
+                <div class="chip-indicator"></div>
+              </div>
+              <div class="chip-toggle" id="chip_hotwaterheating" onclick="toggleChip('chip_hotwaterheating')">
+                <span>♨️ Water Heating</span>
+                <div class="chip-indicator"></div>
+              </div>
+              <div class="chip-toggle active" id="chip_prefarea" onclick="toggleChip('chip_prefarea')">
+                <span>⭐ Preferred Area</span>
+                <div class="chip-indicator"></div>
+              </div>
+            </div>
+          </div>
+
+          <!-- Furnishing Status Segmented Control -->
+          <div class="form-group">
+            <label class="form-label">Furnishing Status</label>
+            <div class="segmented-ctrl">
+              <button type="button" class="seg-btn" id="segFurnished" onclick="setFurnishing('furnished')">Furnished</button>
+              <button type="button" class="seg-btn active" id="segSemi" onclick="setFurnishing('semi-furnished')">Semi-Furnished</button>
+              <button type="button" class="seg-btn" id="segUnfurnished" onclick="setFurnishing('unfurnished')">Unfurnished</button>
+            </div>
+            <input type="hidden" id="simFurnishing" value="semi-furnished">
+          </div>
+        </div>
+
+        <!-- Live Valuation Output Card -->
+        <div class="valuation-card">
+          <div class="val-header">Predicted Valuation</div>
+          <div class="val-price-hero" id="simHeroPrice">₹58.50 L</div>
+          <div class="val-price-full" id="simFullPrice">₹5,850,000 INR</div>
+
+          <div class="val-range-box">
+            <div class="val-range-label">Estimated Confidence Range (± MAE)</div>
+            <div class="val-range-nums" id="simRangeNums">₹48.80 L — ₹68.20 L</div>
+          </div>
+
+          <div style="font-size: 13px; font-weight:600; margin-bottom: 10px;" id="simComparisonText">
+            📈 +22.7% above dataset average (₹47.67 L)
+          </div>
+
+          <!-- Live Feature Breakdown -->
+          <div class="val-drivers-list" id="simDriversList">
+            <!-- Dynamic driver contributions -->
+          </div>
+
+          <div style="font-size: 11px; color: var(--text-muted); margin-top: 14px; line-height: 1.4;">
+            ℹ️ Predictions represent statistical estimates based on patterns in 545 historical housing transactions. It is intended for educational evaluation.
+          </div>
+        </div>
+      </div>
+    </section>
+
+    <!-- TAB 5: CODE & VIVA GUIDE -->
+    <section id="tab-code" class="tab-content">
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🐍 Original Scikit-Learn Python Implementation</div>
+            <div class="card-subtitle">Clean, reproducible code used in the Jupyter Notebook / PDF</div>
+          </div>
+        </div>
+        <details open>
+          <summary><b>1. Preprocessing & Regression Pipeline Code</b></summary>
+          <pre><code>import pandas as pd
+import numpy as np
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+# Load Housing dataset
+df = pd.read_csv("Housing.csv")
+
+# Separate features and target
+X = df.drop(columns=["price"])
+y = df["price"]
+
+categorical_features = X.select_dtypes(include=["object", "category"]).columns.tolist()
+numerical_features = X.select_dtypes(include=np.number).columns.tolist()
+
+# ColumnTransformer handles one-hot encoding without data leakage
+preprocessor = ColumnTransformer(
+    transformers=[
+        ("cat", OneHotEncoder(drop="first", handle_unknown="ignore"), categorical_features),
+        ("num", "passthrough", numerical_features)
+    ]
+)
+
+# 80:20 Train/Test Split
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+# Fit pipeline
+model = Pipeline(steps=[
+    ("preprocessor", preprocessor),
+    ("regressor", LinearRegression())
+])
+model.fit(X_train, y_train)
+
+# Evaluation
+y_pred = model.predict(X_test)
+print(f"MAE:  ₹{mean_absolute_error(y_test, y_pred):,.2f}")
+print(f"RMSE: ₹{np.sqrt(mean_squared_error(y_test, y_pred)):,.2f}")
+print(f"R² Score: {r2_score(y_test, y_pred):.4f}")</code></pre>
+        </details>
+      </div>
+
+      <!-- Viva Q&A Guide -->
+      <div class="card">
+        <div class="card-header">
+          <div>
+            <div class="card-title">🎓 Mini Project Viva Q&A Cheat Sheet</div>
+            <div class="card-subtitle">Common questions asked during project examinations and defenses</div>
+          </div>
+        </div>
+
+        <div class="viva-item">
+          <div class="viva-q">Q1. Why do we use OneHotEncoder with <code>drop='first'</code>?</div>
+          <div class="viva-a">Dropping the first category (e.g., creating 1 dummy column for a binary yes/no feature instead of 2) prevents perfect multicollinearity, commonly known as the <b>Dummy Variable Trap</b>. If both columns were kept, their sum would equal 1, making the feature matrix singular and coefficients unstable in Linear Regression.</div>
+        </div>
+
+        <div class="viva-item">
+          <div class="viva-q">Q2. What is the fundamental difference between MAE and RMSE?</div>
+          <div class="viva-a"><b>Mean Absolute Error (MAE)</b> measures the average absolute magnitude of errors linearly. <b>Root Mean Squared Error (RMSE)</b> squares each error before averaging and taking the root, thereby assigning disproportionately heavier penalties to large outliers. An RMSE significantly higher than MAE indicates occasional large prediction mistakes.</div>
+        </div>
+
+        <div class="viva-item">
+          <div class="viva-q">Q3. What does an R² score of 0.653 signify?</div>
+          <div class="viva-a">The coefficient of determination (R²) indicates that <b>65.3% of the variation in house prices</b> is explained by our 12 input features. The remaining ~35% of variance stems from unobserved parameters such as specific neighborhood, proximity to transit, property age, and architectural finish.</div>
+        </div>
+
+        <div class="viva-item">
+          <div class="viva-q">Q4. How do you check if Linear Regression assumptions are satisfied?</div>
+          <div class="viva-a">We plot the <b>Residuals vs. Fitted values</b>. If residuals are randomly scattered around zero with constant spread across all price levels, the assumption of <i>homoscedasticity</i> holds. In our dataset, higher-priced luxury homes show slightly wider residual variance.</div>
+        </div>
+
+        <div class="viva-item">
+          <div class="viva-q">Q5. Why did Gradient Boosting perform slightly better than Linear Regression?</div>
+          <div class="viva-a">Gradient Boosting combines an ensemble of shallow decision trees that can capture non-linear feature interactions (such as the compounded effect of large area + AC + preferred location) without requiring explicit interaction terms.</div>
+        </div>
+      </div>
+    </section>
+
+  </main>
+
+  <!-- FOOTER -->
+  <footer>
+    SMLDS Mini Project • Supervised Learning Regression &copy; 2026. Interactive browser deployment with WebAssembly Pyodide and scikit-learn.
+  </footer>
+
+  <!-- EMBEDDED DEFAULT DATASET & LOGIC -->
+  <script>
+    // Embedded default 545-row Housing.csv
+    const DEFAULT_HOUSING_CSV = String.raw`price,area,bedrooms,bathrooms,stories,mainroad,guestroom,basement,hotwaterheating,airconditioning,parking,prefarea,furnishingstatus
+13300000,7420,4,2,3,yes,no,no,no,yes,2,yes,furnished
+12250000,8960,4,4,4,yes,no,no,no,yes,3,no,furnished
+12250000,9960,3,2,2,yes,no,yes,no,no,2,yes,semi-furnished
+12215000,7500,4,2,2,yes,no,yes,no,yes,3,yes,furnished
+11410000,7420,4,1,2,yes,yes,yes,no,yes,2,no,furnished
+10850000,7500,3,3,1,yes,no,yes,no,yes,2,yes,semi-furnished
+10150000,8580,4,3,4,yes,no,no,no,yes,2,yes,semi-furnished
+10150000,16200,5,3,2,yes,no,no,no,no,0,no,unfurnished
+9870000,8100,4,1,2,yes,yes,yes,no,yes,2,yes,furnished
+9800000,5750,3,2,4,yes,yes,no,no,yes,1,yes,unfurnished
+9800000,13200,3,1,2,yes,no,yes,no,yes,2,yes,furnished
+9681000,6000,4,3,2,yes,yes,yes,yes,no,2,no,semi-furnished
+9310000,6550,4,2,2,yes,no,no,no,yes,1,yes,semi-furnished
+9240000,3500,4,2,2,yes,no,no,yes,no,2,no,furnished
+9240000,7800,3,2,2,yes,no,no,no,no,0,yes,semi-furnished
+9100000,6000,4,1,2,yes,no,yes,no,no,2,no,semi-furnished
+9100000,6600,4,2,2,yes,yes,yes,no,yes,1,yes,unfurnished
+8960000,8500,3,2,4,yes,no,no,no,yes,2,no,furnished
+8890000,4600,3,2,2,yes,yes,no,no,yes,2,no,furnished
+8855000,6420,3,2,2,yes,no,no,no,yes,1,yes,semi-furnished
+8750000,4320,3,1,2,yes,no,yes,yes,no,2,no,semi-furnished
+8680000,7155,3,2,1,yes,yes,yes,no,yes,2,no,unfurnished
+8645000,8050,3,1,1,yes,yes,yes,no,yes,1,no,furnished
+8645000,4560,3,2,2,yes,yes,yes,no,yes,1,no,furnished
+8575000,8800,3,2,2,yes,no,no,no,yes,2,no,furnished
+8540000,6540,4,2,2,yes,yes,yes,no,yes,2,yes,furnished
+8463000,6000,3,2,4,yes,yes,yes,no,yes,0,yes,semi-furnished
+8400000,8875,3,1,1,yes,no,no,no,no,1,no,semi-furnished
+8400000,7950,5,2,2,yes,no,yes,yes,no,2,no,unfurnished
+8400000,5500,4,2,2,yes,no,yes,no,yes,1,yes,semi-furnished
+8400000,7475,3,2,4,yes,no,no,no,yes,2,no,unfurnished
+8400000,7000,3,1,4,yes,no,no,no,yes,2,no,semi-furnished
+8295000,4880,4,2,2,yes,no,no,no,yes,1,yes,furnished
+8190000,5960,3,3,2,yes,yes,yes,no,no,1,no,unfurnished
+8120000,6840,5,1,2,yes,yes,yes,no,yes,1,no,furnished
+8080940,7000,3,2,4,yes,no,no,no,yes,2,no,furnished
+8043000,7482,3,2,3,yes,no,no,yes,no,1,yes,furnished
+7980000,9000,4,2,4,yes,no,no,no,yes,2,no,furnished
+7962500,6000,3,1,4,yes,yes,no,no,yes,2,no,unfurnished
+7910000,6000,4,2,4,yes,no,no,no,yes,1,no,semi-furnished
+7875000,6550,3,1,2,yes,no,yes,no,yes,0,yes,furnished
+7840000,6360,3,2,4,yes,no,no,no,yes,0,yes,furnished
+7700000,6480,3,2,4,yes,no,no,no,yes,2,no,unfurnished
+7700000,6000,4,2,4,yes,no,no,no,no,2,no,semi-furnished
+7560000,6000,4,2,4,yes,no,no,no,yes,1,no,furnished
+7560000,6000,3,2,3,yes,no,no,no,yes,0,no,semi-furnished
+7525000,6000,3,2,4,yes,no,no,no,yes,1,no,furnished
+7490000,6600,3,1,4,yes,no,no,no,yes,3,yes,furnished
+7455000,4300,3,2,2,yes,no,yes,no,no,1,no,unfurnished
+7420000,7440,3,2,1,yes,yes,yes,no,yes,0,yes,semi-furnished
+7420000,7440,3,2,4,yes,no,no,no,no,1,yes,unfurnished
+7420000,6325,3,1,4,yes,no,no,no,yes,1,no,unfurnished
+7350000,6000,4,2,4,yes,yes,no,no,yes,1,no,furnished
+7350000,5150,3,2,4,yes,no,no,no,yes,2,no,semi-furnished
+7350000,6000,3,2,2,yes,yes,no,no,yes,1,no,semi-furnished
+7350000,6000,3,1,2,yes,no,no,no,yes,1,no,unfurnished
+7343000,11440,4,1,2,yes,no,yes,no,no,1,yes,semi-furnished
+7245000,9000,4,2,4,yes,yes,no,no,yes,1,yes,furnished
+7210000,7680,4,2,4,yes,yes,no,no,yes,1,no,semi-furnished
+7210000,6000,3,2,4,yes,yes,no,no,yes,1,no,furnished
+7140000,6000,3,2,2,yes,yes,no,no,no,1,no,semi-furnished
+7070000,8880,2,1,1,yes,no,no,no,yes,1,no,semi-furnished
+7070000,6240,4,2,2,yes,no,no,no,yes,1,no,furnished
+7035000,6360,4,2,3,yes,no,no,no,yes,2,yes,furnished
+7000000,11175,3,1,1,yes,no,yes,no,yes,1,yes,furnished
+6930000,8880,3,2,2,yes,no,yes,no,yes,1,no,furnished
+6930000,13200,2,1,1,yes,no,yes,yes,no,1,no,furnished
+6895000,7700,3,2,1,yes,no,no,no,no,2,no,unfurnished
+6860000,6000,3,1,1,yes,no,no,no,yes,1,no,furnished
+6790000,12090,4,2,2,yes,no,no,no,no,2,yes,furnished
+6790000,4000,3,2,2,yes,no,yes,no,yes,0,yes,semi-furnished
+6755000,6000,4,2,4,yes,no,no,no,yes,0,no,unfurnished
+6720000,5020,3,1,4,yes,no,no,no,yes,0,yes,unfurnished
+6685000,6600,2,2,4,yes,no,yes,no,no,0,yes,furnished
+6650000,4040,3,1,2,yes,no,yes,yes,no,1,no,furnished
+6650000,4260,4,2,2,yes,no,no,yes,no,0,no,semi-furnished
+6650000,6420,3,2,3,yes,no,no,no,yes,0,yes,furnished
+6650000,6500,3,2,3,yes,no,no,no,yes,0,yes,furnished
+6650000,5700,3,1,1,yes,yes,yes,no,yes,2,yes,furnished
+6650000,6000,3,2,3,yes,yes,no,no,yes,0,no,furnished
+6629000,6000,3,1,2,yes,no,no,yes,no,1,yes,semi-furnished
+6615000,4000,3,2,2,yes,no,yes,no,yes,1,no,semi-furnished
+6615000,10500,3,2,1,yes,no,yes,no,yes,1,yes,furnished
+6580000,6000,3,2,4,yes,no,no,no,yes,0,no,semi-furnished
+6510000,3760,3,1,2,yes,no,no,yes,no,2,no,semi-furnished
+6510000,8250,3,2,3,yes,no,no,no,yes,0,no,furnished
+6510000,6670,3,1,3,yes,no,yes,no,no,0,yes,unfurnished
+6475000,3960,3,1,1,yes,no,yes,no,no,2,no,semi-furnished
+6475000,7410,3,1,1,yes,yes,yes,no,yes,2,yes,unfurnished
+6440000,8580,5,3,2,yes,no,no,no,no,2,no,furnished
+6440000,5000,3,1,2,yes,no,no,no,yes,0,no,semi-furnished
+6419000,6750,2,1,1,yes,yes,yes,no,no,2,yes,furnished
+6405000,4800,3,2,4,yes,yes,no,no,yes,0,no,furnished
+6300000,7200,3,2,1,yes,no,yes,no,yes,3,no,semi-furnished
+6300000,6000,4,2,4,yes,no,no,no,no,1,no,semi-furnished
+6300000,4100,3,2,3,yes,no,no,no,yes,2,no,semi-furnished
+6300000,9000,3,1,1,yes,no,yes,no,no,1,yes,furnished
+6300000,6400,3,1,1,yes,yes,yes,no,yes,1,yes,semi-furnished
+6293000,6600,3,2,3,yes,no,no,no,yes,0,yes,unfurnished
+6265000,6000,4,1,3,yes,yes,yes,no,no,0,yes,unfurnished
+6230000,6600,3,2,1,yes,no,yes,no,yes,0,yes,unfurnished
+6230000,5500,3,1,3,yes,no,no,no,no,1,yes,unfurnished
+6195000,5500,3,2,4,yes,yes,no,no,yes,1,no,semi-furnished
+6195000,6350,3,2,3,yes,yes,no,no,yes,0,no,furnished
+6195000,5500,3,2,1,yes,yes,yes,no,no,2,yes,furnished
+6160000,4500,3,1,4,yes,no,no,no,yes,0,no,unfurnished
+6160000,5450,4,2,1,yes,no,yes,no,yes,0,yes,semi-furnished
+6125000,6420,3,1,3,yes,no,yes,no,no,0,yes,unfurnished
+6107500,3240,4,1,3,yes,no,no,no,no,1,no,semi-furnished
+6090000,6615,4,2,2,yes,yes,no,yes,no,1,no,semi-furnished
+6090000,6600,3,1,1,yes,yes,yes,no,no,2,yes,semi-furnished
+6090000,8372,3,1,3,yes,no,no,no,yes,2,no,unfurnished
+6083000,4300,6,2,2,yes,no,no,no,no,0,no,furnished
+6083000,9620,3,1,1,yes,no,yes,no,no,2,yes,furnished
+6020000,6800,2,1,1,yes,yes,yes,no,no,2,no,furnished
+6020000,8000,3,1,1,yes,yes,yes,no,yes,2,yes,semi-furnished
+6020000,6900,3,2,1,yes,yes,yes,no,no,0,yes,unfurnished
+5950000,3700,4,1,2,yes,yes,no,no,yes,0,no,furnished
+5950000,6420,3,1,1,yes,no,yes,no,yes,0,yes,furnished
+5950000,7020,3,1,1,yes,no,yes,no,yes,2,yes,semi-furnished
+5950000,6540,3,1,1,yes,yes,yes,no,no,2,yes,furnished
+5950000,7231,3,1,2,yes,yes,yes,no,yes,0,yes,semi-furnished
+5950000,6254,4,2,1,yes,no,yes,no,no,1,yes,semi-furnished
+5950000,7320,4,2,2,yes,no,no,no,no,0,no,furnished
+5950000,6525,3,2,4,yes,no,no,no,no,1,no,furnished
+5943000,15600,3,1,1,yes,no,no,no,yes,2,no,semi-furnished
+5880000,7160,3,1,1,yes,no,yes,no,no,2,yes,unfurnished
+5880000,6500,3,2,3,yes,no,no,no,yes,0,no,unfurnished
+5873000,5500,3,1,3,yes,yes,no,no,yes,1,no,furnished
+5873000,11460,3,1,3,yes,no,no,no,no,2,yes,semi-furnished
+5866000,4800,3,1,1,yes,yes,yes,no,no,0,no,unfurnished
+5810000,5828,4,1,4,yes,yes,no,no,no,0,no,semi-furnished
+5810000,5200,3,1,3,yes,no,no,no,yes,0,no,semi-furnished
+5810000,4800,3,1,3,yes,no,no,no,yes,0,no,unfurnished
+5803000,7000,3,1,1,yes,no,yes,no,no,2,yes,semi-furnished
+5775000,6000,3,2,4,yes,no,no,no,yes,0,no,unfurnished
+5740000,5400,4,2,2,yes,no,no,no,yes,2,no,unfurnished
+5740000,4640,4,1,2,yes,no,no,no,no,1,no,semi-furnished
+5740000,5000,3,1,3,yes,no,no,no,yes,0,no,semi-furnished
+5740000,6360,3,1,1,yes,yes,yes,no,yes,2,yes,furnished
+5740000,5800,3,2,4,yes,no,no,no,yes,0,no,unfurnished
+5652500,6660,4,2,2,yes,yes,yes,no,no,1,yes,semi-furnished
+5600000,10500,4,2,2,yes,no,no,no,no,1,no,semi-furnished
+5600000,4800,5,2,3,no,no,yes,yes,no,0,no,unfurnished
+5600000,4700,4,1,2,yes,yes,yes,no,yes,1,no,furnished
+5600000,5000,3,1,4,yes,no,no,no,no,0,no,furnished
+5600000,10500,2,1,1,yes,no,no,no,no,1,no,semi-furnished
+5600000,5500,3,2,2,yes,no,no,no,no,1,no,semi-furnished
+5600000,6360,3,1,3,yes,no,no,no,no,0,yes,semi-furnished
+5600000,6600,4,2,1,yes,no,yes,no,no,0,yes,semi-furnished
+5600000,5136,3,1,2,yes,yes,yes,no,yes,0,yes,unfurnished
+5565000,4400,4,1,2,yes,no,no,no,yes,2,yes,semi-furnished
+5565000,5400,5,1,2,yes,yes,yes,no,yes,0,yes,furnished
+5530000,3300,3,3,2,yes,no,yes,no,no,0,no,semi-furnished
+5530000,3650,3,2,2,yes,no,no,no,no,2,no,semi-furnished
+5530000,6100,3,2,1,yes,no,yes,no,no,2,yes,furnished
+5523000,6900,3,1,1,yes,yes,yes,no,no,0,yes,semi-furnished
+5495000,2817,4,2,2,no,yes,yes,no,no,1,no,furnished
+5495000,7980,3,1,1,yes,no,no,no,no,2,no,semi-furnished
+5460000,3150,3,2,1,yes,yes,yes,no,yes,0,no,furnished
+5460000,6210,4,1,4,yes,yes,no,no,yes,0,no,furnished
+5460000,6100,3,1,3,yes,yes,no,no,yes,0,yes,semi-furnished
+5460000,6600,4,2,2,yes,yes,yes,no,no,0,yes,semi-furnished
+5425000,6825,3,1,1,yes,yes,yes,no,yes,0,yes,semi-furnished
+5390000,6710,3,2,2,yes,yes,yes,no,no,1,yes,furnished
+5383000,6450,3,2,1,yes,yes,yes,yes,no,0,no,unfurnished
+5320000,7800,3,1,1,yes,no,yes,no,yes,2,yes,unfurnished
+5285000,4600,2,2,1,yes,no,no,no,yes,2,no,semi-furnished
+5250000,4260,4,1,2,yes,no,yes,no,yes,0,no,furnished
+5250000,6540,4,2,2,no,no,no,no,yes,0,no,semi-furnished
+5250000,5500,3,2,1,yes,no,yes,no,no,0,no,semi-furnished
+5250000,10269,3,1,1,yes,no,no,no,no,1,yes,semi-furnished
+5250000,8400,3,1,2,yes,yes,yes,no,yes,2,yes,unfurnished
+5250000,5300,4,2,1,yes,no,no,no,yes,0,yes,unfurnished
+5250000,3800,3,1,2,yes,yes,yes,no,no,1,yes,unfurnished
+5250000,9800,4,2,2,yes,yes,no,no,no,2,no,semi-furnished
+5250000,8520,3,1,1,yes,no,no,no,yes,2,no,furnished
+5243000,6050,3,1,1,yes,no,yes,no,no,0,yes,semi-furnished
+5229000,7085,3,1,1,yes,yes,yes,no,no,2,yes,semi-furnished
+5215000,3180,3,2,2,yes,no,no,no,no,2,no,semi-furnished
+5215000,4500,4,2,1,no,no,yes,no,yes,2,no,semi-furnished
+5215000,7200,3,1,2,yes,yes,yes,no,no,1,yes,furnished
+5145000,3410,3,1,2,no,no,no,no,yes,0,no,semi-furnished
+5145000,7980,3,1,1,yes,no,no,no,no,1,yes,semi-furnished
+5110000,3000,3,2,2,yes,yes,yes,no,no,0,no,furnished
+5110000,3000,3,1,2,yes,no,yes,no,no,0,no,unfurnished
+5110000,11410,2,1,2,yes,no,no,no,no,0,yes,furnished
+5110000,6100,3,1,1,yes,no,yes,no,yes,0,yes,semi-furnished
+5075000,5720,2,1,2,yes,no,no,no,yes,0,yes,unfurnished
+5040000,3540,2,1,1,no,yes,yes,no,no,0,no,semi-furnished
+5040000,7600,4,1,2,yes,no,no,no,yes,2,no,furnished
+5040000,10700,3,1,2,yes,yes,yes,no,no,0,no,semi-furnished
+5040000,6600,3,1,1,yes,yes,yes,no,no,0,yes,furnished
+5033000,4800,2,1,1,yes,yes,yes,no,no,0,no,semi-furnished
+5005000,8150,3,2,1,yes,yes,yes,no,no,0,no,semi-furnished
+4970000,4410,4,3,2,yes,no,yes,no,no,2,no,semi-furnished
+4970000,7686,3,1,1,yes,yes,yes,yes,no,0,no,semi-furnished
+4956000,2800,3,2,2,no,no,yes,no,yes,1,no,semi-furnished
+4935000,5948,3,1,2,yes,no,no,no,yes,0,no,semi-furnished
+4907000,4200,3,1,2,yes,no,no,no,no,1,no,furnished
+4900000,4520,3,1,2,yes,no,yes,no,yes,0,no,semi-furnished
+4900000,4095,3,1,2,no,yes,yes,no,yes,0,no,semi-furnished
+4900000,4120,2,1,1,yes,no,yes,no,no,1,no,semi-furnished
+4900000,5400,4,1,2,yes,no,no,no,no,0,no,semi-furnished
+4900000,4770,3,1,1,yes,yes,yes,no,no,0,no,semi-furnished
+4900000,6300,3,1,1,yes,no,no,no,yes,2,no,semi-furnished
+4900000,5800,2,1,1,yes,yes,yes,no,yes,0,no,semi-furnished
+4900000,3000,3,1,2,yes,no,yes,no,yes,0,no,semi-furnished
+4900000,2970,3,1,3,yes,no,no,no,no,0,no,semi-furnished
+4900000,6720,3,1,1,yes,no,no,no,no,0,no,unfurnished
+4900000,4646,3,1,2,yes,yes,yes,no,no,2,no,semi-furnished
+4900000,12900,3,1,1,yes,no,no,no,no,2,no,furnished
+4893000,3420,4,2,2,yes,no,yes,no,yes,2,no,semi-furnished
+4893000,4995,4,2,1,yes,no,yes,no,no,0,no,semi-furnished
+4865000,4350,2,1,1,yes,no,yes,no,no,0,no,unfurnished
+4830000,4160,3,1,3,yes,no,no,no,no,0,no,unfurnished
+4830000,6040,3,1,1,yes,no,no,no,no,2,yes,semi-furnished
+4830000,6862,3,1,2,yes,no,no,no,yes,2,yes,furnished
+4830000,4815,2,1,1,yes,no,no,no,yes,0,yes,semi-furnished
+4795000,7000,3,1,2,yes,no,yes,no,no,0,no,unfurnished
+4795000,8100,4,1,4,yes,no,yes,no,yes,2,no,semi-furnished
+4767000,3420,4,2,2,yes,no,no,no,no,0,no,semi-furnished
+4760000,9166,2,1,1,yes,no,yes,no,yes,2,no,semi-furnished
+4760000,6321,3,1,2,yes,no,yes,no,yes,1,no,furnished
+4760000,10240,2,1,1,yes,no,no,no,yes,2,yes,unfurnished
+4753000,6440,2,1,1,yes,no,no,no,yes,3,no,semi-furnished
+4690000,5170,3,1,4,yes,no,no,no,yes,0,no,semi-furnished
+4690000,6000,2,1,1,yes,no,yes,no,yes,1,no,furnished
+4690000,3630,3,1,2,yes,no,no,no,no,2,no,semi-furnished
+4690000,9667,4,2,2,yes,yes,yes,no,no,1,no,semi-furnished
+4690000,5400,2,1,2,yes,no,no,no,no,0,yes,semi-furnished
+4690000,4320,3,1,1,yes,no,no,no,no,0,yes,semi-furnished
+4655000,3745,3,1,2,yes,no,yes,no,no,0,no,furnished
+4620000,4160,3,1,1,yes,yes,yes,no,yes,0,no,unfurnished
+4620000,3880,3,2,2,yes,no,yes,no,no,2,no,semi-furnished
+4620000,5680,3,1,2,yes,yes,no,no,yes,1,no,semi-furnished
+4620000,2870,2,1,2,yes,yes,yes,no,no,0,yes,semi-furnished
+4620000,5010,3,1,2,yes,no,yes,no,no,0,no,semi-furnished
+4613000,4510,4,2,2,yes,no,yes,no,no,0,no,semi-furnished
+4585000,4000,3,1,2,yes,no,no,no,no,1,no,furnished
+4585000,3840,3,1,2,yes,no,no,no,no,1,yes,semi-furnished
+4550000,3760,3,1,1,yes,no,no,no,no,2,no,semi-furnished
+4550000,3640,3,1,2,yes,no,no,no,yes,0,no,furnished
+4550000,2550,3,1,2,yes,no,yes,no,no,0,no,furnished
+4550000,5320,3,1,2,yes,yes,yes,no,no,0,yes,semi-furnished
+4550000,5360,3,1,2,yes,no,no,no,no,2,yes,unfurnished
+4550000,3520,3,1,1,yes,no,no,no,no,0,yes,semi-furnished
+4550000,8400,4,1,4,yes,no,no,no,no,3,no,unfurnished
+4543000,4100,2,2,1,yes,yes,yes,no,no,0,no,semi-furnished
+4543000,4990,4,2,2,yes,yes,yes,no,no,0,yes,furnished
+4515000,3510,3,1,3,yes,no,no,no,no,0,no,semi-furnished
+4515000,3450,3,1,2,yes,no,yes,no,no,1,no,semi-furnished
+4515000,9860,3,1,1,yes,no,no,no,no,0,no,semi-furnished
+4515000,3520,2,1,2,yes,no,no,no,no,0,yes,furnished
+4480000,4510,4,1,2,yes,no,no,no,yes,2,no,semi-furnished
+4480000,5885,2,1,1,yes,no,no,no,yes,1,no,unfurnished
+4480000,4000,3,1,2,yes,no,no,no,no,2,no,furnished
+4480000,8250,3,1,1,yes,no,no,no,no,0,no,furnished
+4480000,4040,3,1,2,yes,no,no,no,no,1,no,semi-furnished
+4473000,6360,2,1,1,yes,no,yes,no,yes,1,no,furnished
+4473000,3162,3,1,2,yes,no,no,no,yes,1,no,furnished
+4473000,3510,3,1,2,yes,no,no,no,no,0,no,semi-furnished
+4445000,3750,2,1,1,yes,yes,yes,no,no,0,no,semi-furnished
+4410000,3968,3,1,2,no,no,no,no,no,0,no,semi-furnished
+4410000,4900,2,1,2,yes,no,yes,no,no,0,no,semi-furnished
+4403000,2880,3,1,2,yes,no,no,no,no,0,yes,semi-furnished
+4403000,4880,3,1,1,yes,no,no,no,no,2,yes,unfurnished
+4403000,4920,3,1,2,yes,no,no,no,no,1,no,semi-furnished
+4382000,4950,4,1,2,yes,no,no,no,yes,0,no,semi-furnished
+4375000,3900,3,1,2,yes,no,no,no,no,0,no,unfurnished
+4340000,4500,3,2,3,yes,no,no,yes,no,1,no,furnished
+4340000,1905,5,1,2,no,no,yes,no,no,0,no,semi-furnished
+4340000,4075,3,1,1,yes,yes,yes,no,no,2,no,semi-furnished
+4340000,3500,4,1,2,yes,no,no,no,no,2,no,furnished
+4340000,6450,4,1,2,yes,no,no,no,no,0,no,semi-furnished
+4319000,4032,2,1,1,yes,no,yes,no,no,0,no,furnished
+4305000,4400,2,1,1,yes,no,no,no,no,1,no,semi-furnished
+4305000,10360,2,1,1,yes,no,no,no,no,1,yes,semi-furnished
+4277000,3400,3,1,2,yes,no,yes,no,no,2,yes,semi-furnished
+4270000,6360,2,1,1,yes,no,no,no,no,0,no,furnished
+4270000,6360,2,1,2,yes,no,no,no,no,0,no,unfurnished
+4270000,4500,2,1,1,yes,no,no,no,yes,2,no,furnished
+4270000,2175,3,1,2,no,yes,yes,no,yes,0,no,unfurnished
+4270000,4360,4,1,2,yes,no,no,no,no,0,no,furnished
+4270000,7770,2,1,1,yes,no,no,no,no,1,no,furnished
+4235000,6650,3,1,2,yes,yes,no,no,no,0,no,semi-furnished
+4235000,2787,3,1,1,yes,no,yes,no,no,0,yes,furnished
+4200000,5500,3,1,2,yes,no,no,no,yes,0,no,unfurnished
+4200000,5040,3,1,2,yes,no,yes,no,yes,0,no,unfurnished
+4200000,5850,2,1,1,yes,yes,yes,no,no,2,no,semi-furnished
+4200000,2610,4,3,2,no,no,no,no,no,0,no,semi-furnished
+4200000,2953,3,1,2,yes,no,yes,no,yes,0,no,unfurnished
+4200000,2747,4,2,2,no,no,no,no,no,0,no,semi-furnished
+4200000,4410,2,1,1,no,no,no,no,no,1,no,unfurnished
+4200000,4000,4,2,2,no,no,no,no,no,0,no,semi-furnished
+4200000,2325,3,1,2,no,no,no,no,no,0,no,semi-furnished
+4200000,4600,3,2,2,yes,no,no,no,yes,1,no,semi-furnished
+4200000,3640,3,2,2,yes,no,yes,no,no,0,no,unfurnished
+4200000,5800,3,1,1,yes,no,no,yes,no,2,no,semi-furnished
+4200000,7000,3,1,1,yes,no,no,no,no,3,no,furnished
+4200000,4079,3,1,3,yes,no,no,no,no,0,no,semi-furnished
+4200000,3520,3,1,2,yes,no,no,no,no,0,yes,semi-furnished
+4200000,2145,3,1,3,yes,no,no,no,no,1,yes,unfurnished
+4200000,4500,3,1,1,yes,no,yes,no,no,0,no,furnished
+4193000,8250,3,1,1,yes,no,yes,no,no,3,no,semi-furnished
+4193000,3450,3,1,2,yes,no,no,no,no,1,no,semi-furnished
+4165000,4840,3,1,2,yes,no,no,no,no,1,no,semi-furnished
+4165000,4080,3,1,2,yes,no,no,no,no,2,no,semi-furnished
+4165000,4046,3,1,2,yes,no,yes,no,no,1,no,semi-furnished
+4130000,4632,4,1,2,yes,no,no,no,yes,0,no,semi-furnished
+4130000,5985,3,1,1,yes,no,yes,no,no,0,no,semi-furnished
+4123000,6060,2,1,1,yes,no,yes,no,no,1,no,semi-furnished
+4098500,3600,3,1,1,yes,no,yes,no,yes,0,yes,furnished
+4095000,3680,3,2,2,yes,no,no,no,no,0,no,semi-furnished
+4095000,4040,2,1,2,yes,no,no,no,no,1,no,semi-furnished
+4095000,5600,2,1,1,yes,no,no,no,yes,0,no,semi-furnished
+4060000,5900,4,2,2,no,no,yes,no,no,1,no,unfurnished
+4060000,4992,3,2,2,yes,no,no,no,no,2,no,unfurnished
+4060000,4340,3,1,1,yes,no,no,no,no,0,no,semi-furnished
+4060000,3000,4,1,3,yes,no,yes,no,yes,2,no,semi-furnished
+4060000,4320,3,1,2,yes,no,no,no,no,2,yes,furnished
+4025000,3630,3,2,2,yes,no,no,yes,no,2,no,semi-furnished
+4025000,3460,3,2,1,yes,no,yes,no,yes,1,no,furnished
+4025000,5400,3,1,1,yes,no,no,no,no,3,no,semi-furnished
+4007500,4500,3,1,2,no,no,yes,no,yes,0,no,semi-furnished
+4007500,3460,4,1,2,yes,no,no,no,yes,0,no,semi-furnished
+3990000,4100,4,1,1,no,no,yes,no,no,0,no,unfurnished
+3990000,6480,3,1,2,no,no,no,no,yes,1,no,semi-furnished
+3990000,4500,3,2,2,no,no,yes,no,yes,0,no,semi-furnished
+3990000,3960,3,1,2,yes,no,no,no,no,0,no,furnished
+3990000,4050,2,1,2,yes,yes,yes,no,no,0,yes,unfurnished
+3920000,7260,3,2,1,yes,yes,yes,no,no,3,no,furnished
+3920000,5500,4,1,2,yes,yes,yes,no,no,0,no,semi-furnished
+3920000,3000,3,1,2,yes,no,no,no,no,0,no,semi-furnished
+3920000,3290,2,1,1,yes,no,no,yes,no,1,no,furnished
+3920000,3816,2,1,1,yes,no,yes,no,yes,2,no,furnished
+3920000,8080,3,1,1,yes,no,no,no,yes,2,no,semi-furnished
+3920000,2145,4,2,1,yes,no,yes,no,no,0,yes,unfurnished
+3885000,3780,2,1,2,yes,yes,yes,no,no,0,no,semi-furnished
+3885000,3180,4,2,2,yes,no,no,no,no,0,no,furnished
+3850000,5300,5,2,2,yes,no,no,no,no,0,no,semi-furnished
+3850000,3180,2,2,1,yes,no,yes,no,no,2,no,semi-furnished
+3850000,7152,3,1,2,yes,no,no,no,yes,0,no,furnished
+3850000,4080,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3850000,3850,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3850000,2015,3,1,2,yes,no,yes,no,no,0,yes,semi-furnished
+3850000,2176,2,1,2,yes,yes,no,no,no,0,yes,semi-furnished
+3836000,3350,3,1,2,yes,no,no,no,no,0,no,unfurnished
+3815000,3150,2,2,1,no,no,yes,no,no,0,no,semi-furnished
+3780000,4820,3,1,2,yes,no,no,no,no,0,no,semi-furnished
+3780000,3420,2,1,2,yes,no,no,yes,no,1,no,semi-furnished
+3780000,3600,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3780000,5830,2,1,1,yes,no,no,no,no,2,no,unfurnished
+3780000,2856,3,1,3,yes,no,no,no,no,0,yes,furnished
+3780000,8400,2,1,1,yes,no,no,no,no,1,no,furnished
+3773000,8250,3,1,1,yes,no,no,no,no,2,no,furnished
+3773000,2520,5,2,1,no,no,yes,no,yes,1,no,furnished
+3773000,6930,4,1,2,no,no,no,no,no,1,no,furnished
+3745000,3480,2,1,1,yes,no,no,no,no,0,yes,semi-furnished
+3710000,3600,3,1,1,yes,no,no,no,no,1,no,unfurnished
+3710000,4040,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3710000,6020,3,1,1,yes,no,no,no,no,0,no,semi-furnished
+3710000,4050,2,1,1,yes,no,no,no,no,0,no,furnished
+3710000,3584,2,1,1,yes,no,no,yes,no,0,no,semi-furnished
+3703000,3120,3,1,2,no,no,yes,yes,no,0,no,semi-furnished
+3703000,5450,2,1,1,yes,no,no,no,no,0,no,furnished
+3675000,3630,2,1,1,yes,no,yes,no,no,0,no,furnished
+3675000,3630,2,1,1,yes,no,no,no,yes,0,no,unfurnished
+3675000,5640,2,1,1,no,no,no,no,no,0,no,semi-furnished
+3675000,3600,2,1,1,yes,no,no,no,no,0,no,furnished
+3640000,4280,2,1,1,yes,no,no,no,yes,2,no,semi-furnished
+3640000,3570,3,1,2,yes,no,yes,no,no,0,no,semi-furnished
+3640000,3180,3,1,2,no,no,yes,no,no,0,no,semi-furnished
+3640000,3000,2,1,2,yes,no,no,no,yes,0,no,furnished
+3640000,3520,2,2,1,yes,no,yes,no,no,0,no,semi-furnished
+3640000,5960,3,1,2,yes,yes,yes,no,no,0,no,unfurnished
+3640000,4130,3,2,2,yes,no,no,no,no,2,no,semi-furnished
+3640000,2850,3,2,2,no,no,yes,no,no,0,yes,unfurnished
+3640000,2275,3,1,3,yes,no,no,yes,yes,0,yes,semi-furnished
+3633000,3520,3,1,1,yes,no,no,no,no,2,yes,unfurnished
+3605000,4500,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3605000,4000,2,1,1,yes,no,no,no,no,0,yes,semi-furnished
+3570000,3150,3,1,2,yes,no,yes,no,no,0,no,furnished
+3570000,4500,4,2,2,yes,no,yes,no,no,2,no,furnished
+3570000,4500,2,1,1,no,no,no,no,no,0,no,furnished
+3570000,3640,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3535000,3850,3,1,1,yes,no,no,no,no,2,no,unfurnished
+3500000,4240,3,1,2,yes,no,no,no,yes,0,no,semi-furnished
+3500000,3650,3,1,2,yes,no,no,no,no,0,no,unfurnished
+3500000,4600,4,1,2,yes,no,no,no,no,0,no,semi-furnished
+3500000,2135,3,2,2,no,no,no,no,no,0,no,unfurnished
+3500000,3036,3,1,2,yes,no,yes,no,no,0,no,semi-furnished
+3500000,3990,3,1,2,yes,no,no,no,no,0,no,semi-furnished
+3500000,7424,3,1,1,no,no,no,no,no,0,no,unfurnished
+3500000,3480,3,1,1,no,no,no,no,yes,0,no,unfurnished
+3500000,3600,6,1,2,yes,no,no,no,no,1,no,unfurnished
+3500000,3640,2,1,1,yes,no,no,no,no,1,no,semi-furnished
+3500000,5900,2,1,1,yes,no,no,no,no,1,no,furnished
+3500000,3120,3,1,2,yes,no,no,no,no,1,no,unfurnished
+3500000,7350,2,1,1,yes,no,no,no,no,1,no,semi-furnished
+3500000,3512,2,1,1,yes,no,no,no,no,1,yes,unfurnished
+3500000,9500,3,1,2,yes,no,no,no,no,3,yes,unfurnished
+3500000,5880,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3500000,12944,3,1,1,yes,no,no,no,no,0,no,unfurnished
+3493000,4900,3,1,2,no,no,no,no,no,0,no,unfurnished
+3465000,3060,3,1,1,yes,no,no,no,no,0,no,unfurnished
+3465000,5320,2,1,1,yes,no,no,no,no,1,yes,unfurnished
+3465000,2145,3,1,3,yes,no,no,no,no,0,yes,furnished
+3430000,4000,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3430000,3185,2,1,1,yes,no,no,no,no,2,no,unfurnished
+3430000,3850,3,1,1,yes,no,no,no,no,0,no,unfurnished
+3430000,2145,3,1,3,yes,no,no,no,no,0,yes,furnished
+3430000,2610,3,1,2,yes,no,yes,no,no,0,yes,unfurnished
+3430000,1950,3,2,2,yes,no,yes,no,no,0,yes,unfurnished
+3423000,4040,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3395000,4785,3,1,2,yes,yes,yes,no,yes,1,no,furnished
+3395000,3450,3,1,1,yes,no,yes,no,no,2,no,unfurnished
+3395000,3640,2,1,1,yes,no,no,no,no,0,no,furnished
+3360000,3500,4,1,2,yes,no,no,no,yes,2,no,unfurnished
+3360000,4960,4,1,3,no,no,no,no,no,0,no,semi-furnished
+3360000,4120,2,1,2,yes,no,no,no,no,0,no,unfurnished
+3360000,4750,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3360000,3720,2,1,1,no,no,no,no,yes,0,no,unfurnished
+3360000,3750,3,1,1,yes,no,no,no,no,0,no,unfurnished
+3360000,3100,3,1,2,no,no,yes,no,no,0,no,semi-furnished
+3360000,3185,2,1,1,yes,no,yes,no,no,2,no,furnished
+3353000,2700,3,1,1,no,no,no,no,no,0,no,furnished
+3332000,2145,3,1,2,yes,no,yes,no,no,0,yes,furnished
+3325000,4040,2,1,1,yes,no,no,no,no,1,no,unfurnished
+3325000,4775,4,1,2,yes,no,no,no,no,0,no,unfurnished
+3290000,2500,2,1,1,no,no,no,no,yes,0,no,unfurnished
+3290000,3180,4,1,2,yes,no,yes,no,yes,0,no,unfurnished
+3290000,6060,3,1,1,yes,yes,yes,no,no,0,no,furnished
+3290000,3480,4,1,2,no,no,no,no,no,1,no,semi-furnished
+3290000,3792,4,1,2,yes,no,no,no,no,0,no,semi-furnished
+3290000,4040,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3290000,2145,3,1,2,yes,no,yes,no,no,0,yes,furnished
+3290000,5880,3,1,1,yes,no,no,no,no,1,no,unfurnished
+3255000,4500,2,1,1,no,no,no,no,no,0,no,semi-furnished
+3255000,3930,2,1,1,no,no,no,no,no,0,no,unfurnished
+3234000,3640,4,1,2,yes,no,yes,no,no,0,no,unfurnished
+3220000,4370,3,1,2,yes,no,no,no,no,0,no,unfurnished
+3220000,2684,2,1,1,yes,no,no,no,yes,1,no,unfurnished
+3220000,4320,3,1,1,no,no,no,no,no,1,no,unfurnished
+3220000,3120,3,1,2,no,no,no,no,no,0,no,furnished
+3150000,3450,1,1,1,yes,no,no,no,no,0,no,furnished
+3150000,3986,2,2,1,no,yes,yes,no,no,1,no,unfurnished
+3150000,3500,2,1,1,no,no,yes,no,no,0,no,semi-furnished
+3150000,4095,2,1,1,yes,no,no,no,no,2,no,semi-furnished
+3150000,1650,3,1,2,no,no,yes,no,no,0,no,unfurnished
+3150000,3450,3,1,2,yes,no,yes,no,no,0,no,semi-furnished
+3150000,6750,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3150000,9000,3,1,2,yes,no,no,no,no,2,no,semi-furnished
+3150000,3069,2,1,1,yes,no,no,no,no,1,no,unfurnished
+3143000,4500,3,1,2,yes,no,no,no,yes,0,no,unfurnished
+3129000,5495,3,1,1,yes,no,yes,no,no,0,no,unfurnished
+3118850,2398,3,1,1,yes,no,no,no,no,0,yes,semi-furnished
+3115000,3000,3,1,1,no,no,no,no,yes,0,no,unfurnished
+3115000,3850,3,1,2,yes,no,no,no,no,0,no,unfurnished
+3115000,3500,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3087000,8100,2,1,1,yes,no,no,no,no,1,no,unfurnished
+3080000,4960,2,1,1,yes,no,yes,no,yes,0,no,unfurnished
+3080000,2160,3,1,2,no,no,yes,no,no,0,no,semi-furnished
+3080000,3090,2,1,1,yes,yes,yes,no,no,0,no,unfurnished
+3080000,4500,2,1,2,yes,no,no,yes,no,1,no,semi-furnished
+3045000,3800,2,1,1,yes,no,no,no,no,0,no,unfurnished
+3010000,3090,3,1,2,no,no,no,no,no,0,no,semi-furnished
+3010000,3240,3,1,2,yes,no,no,no,no,2,no,semi-furnished
+3010000,2835,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+3010000,4600,2,1,1,yes,no,no,no,no,0,no,furnished
+3010000,5076,3,1,1,no,no,no,no,no,0,no,unfurnished
+3010000,3750,3,1,2,yes,no,no,no,no,0,no,unfurnished
+3010000,3630,4,1,2,yes,no,no,no,no,3,no,semi-furnished
+3003000,8050,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2975000,4352,4,1,2,no,no,no,no,no,1,no,unfurnished
+2961000,3000,2,1,2,yes,no,no,no,no,0,no,semi-furnished
+2940000,5850,3,1,2,yes,no,yes,no,no,1,no,unfurnished
+2940000,4960,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2940000,3600,3,1,2,no,no,no,no,no,1,no,unfurnished
+2940000,3660,4,1,2,no,no,no,no,no,0,no,unfurnished
+2940000,3480,3,1,2,no,no,no,no,no,1,no,semi-furnished
+2940000,2700,2,1,1,no,no,no,no,no,0,no,furnished
+2940000,3150,3,1,2,no,no,no,no,no,0,no,unfurnished
+2940000,6615,3,1,2,yes,no,no,no,no,0,no,semi-furnished
+2870000,3040,2,1,1,no,no,no,no,no,0,no,unfurnished
+2870000,3630,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2870000,6000,2,1,1,yes,no,no,no,no,0,no,semi-furnished
+2870000,5400,4,1,2,yes,no,no,no,no,0,no,unfurnished
+2852500,5200,4,1,3,yes,no,no,no,no,0,no,unfurnished
+2835000,3300,3,1,2,no,no,no,no,no,1,no,semi-furnished
+2835000,4350,3,1,2,no,no,no,yes,no,1,no,unfurnished
+2835000,2640,2,1,1,no,no,no,no,no,1,no,furnished
+2800000,2650,3,1,2,yes,no,yes,no,no,1,no,unfurnished
+2800000,3960,3,1,1,yes,no,no,no,no,0,no,furnished
+2730000,6800,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2730000,4000,3,1,2,yes,no,no,no,no,1,no,unfurnished
+2695000,4000,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2660000,3934,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2660000,2000,2,1,2,yes,no,no,no,no,0,no,semi-furnished
+2660000,3630,3,3,2,no,yes,no,no,no,0,no,unfurnished
+2660000,2800,3,1,1,yes,no,no,no,no,0,no,unfurnished
+2660000,2430,3,1,1,no,no,no,no,no,0,no,unfurnished
+2660000,3480,2,1,1,yes,no,no,no,no,1,no,semi-furnished
+2660000,4000,3,1,1,yes,no,no,no,no,0,no,semi-furnished
+2653000,3185,2,1,1,yes,no,no,no,yes,0,no,unfurnished
+2653000,4000,3,1,2,yes,no,no,no,yes,0,no,unfurnished
+2604000,2910,2,1,1,no,no,no,no,no,0,no,unfurnished
+2590000,3600,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2590000,4400,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2590000,3600,2,2,2,yes,no,yes,no,no,1,no,furnished
+2520000,2880,3,1,1,no,no,no,no,no,0,no,unfurnished
+2520000,3180,3,1,1,no,no,no,no,no,0,no,unfurnished
+2520000,3000,2,1,2,yes,no,no,no,no,0,no,furnished
+2485000,4400,3,1,2,yes,no,no,no,no,0,no,unfurnished
+2485000,3000,3,1,2,no,no,no,no,no,0,no,semi-furnished
+2450000,3210,3,1,2,yes,no,yes,no,no,0,no,unfurnished
+2450000,3240,2,1,1,no,yes,no,no,no,1,no,unfurnished
+2450000,3000,2,1,1,yes,no,no,no,no,1,no,unfurnished
+2450000,3500,2,1,1,yes,yes,no,no,no,0,no,unfurnished
+2450000,4840,2,1,2,yes,no,no,no,no,0,no,unfurnished
+2450000,7700,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2408000,3635,2,1,1,no,no,no,no,no,0,no,unfurnished
+2380000,2475,3,1,2,yes,no,no,no,no,0,no,furnished
+2380000,2787,4,2,2,yes,no,no,no,no,0,no,furnished
+2380000,3264,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2345000,3640,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2310000,3180,2,1,1,yes,no,no,no,no,0,no,unfurnished
+2275000,1836,2,1,1,no,no,yes,no,no,0,no,semi-furnished
+2275000,3970,1,1,1,no,no,no,no,no,0,no,unfurnished
+2275000,3970,3,1,2,yes,no,yes,no,no,0,no,unfurnished
+2240000,1950,3,1,1,no,no,no,yes,no,0,no,unfurnished
+2233000,5300,3,1,1,no,no,no,no,yes,0,yes,unfurnished
+2135000,3000,2,1,1,no,no,no,no,no,0,no,unfurnished
+2100000,2400,3,1,2,yes,no,no,no,no,0,no,unfurnished
+2100000,3000,4,1,2,yes,no,no,no,no,0,no,unfurnished
+2100000,3360,2,1,1,yes,no,no,no,no,1,no,unfurnished
+1960000,3420,5,1,2,no,no,no,no,no,0,no,unfurnished
+1890000,1700,3,1,2,yes,no,no,no,no,0,no,unfurnished
+1890000,3649,2,1,1,yes,no,no,no,no,0,no,unfurnished
+1855000,2990,2,1,1,no,no,no,no,no,1,no,unfurnished
+1820000,3000,2,1,1,yes,no,yes,no,no,2,no,unfurnished
+1767150,2400,3,1,1,no,no,no,no,no,0,no,semi-furnished
+1750000,3620,2,1,1,yes,no,no,no,no,0,no,unfurnished
+1750000,2910,3,1,1,no,no,no,no,no,0,no,furnished
+1750000,3850,3,1,2,yes,no,no,no,no,0,no,unfurnished`;
+
+    // Embedded Python pipeline logic executed inside Pyodide
+    const PYTHON_PIPELINE_CODE = String.raw`import pandas as pd, numpy as np, json, io, warnings
+from sklearn.model_selection import train_test_split
+from sklearn.compose import ColumnTransformer
+from sklearn.preprocessing import OneHotEncoder
+from sklearn.pipeline import Pipeline
+from sklearn.linear_model import LinearRegression, Ridge
+from sklearn.ensemble import RandomForestRegressor, GradientBoostingRegressor
+from sklearn.metrics import mean_absolute_error, mean_squared_error, r2_score
+
+warnings.filterwarnings('ignore')
+df = pd.read_csv(io.StringIO(csv_text))
+required = ['price','area','bedrooms','bathrooms','stories','mainroad','guestroom','basement','hotwaterheating','airconditioning','parking','prefarea','furnishingstatus']
+missing_cols = [c for c in required if c not in df.columns]
+if missing_cols:
+    raise ValueError('Dataset is missing required columns: ' + ', '.join(missing_cols))
+
+X = df.drop(columns=['price'])
+y = df['price']
+
+cat_cols = X.select_dtypes(include=['object', 'category']).columns.tolist()
+num_cols = X.select_dtypes(include=np.number).columns.tolist()
+
+preprocessor = ColumnTransformer(transformers=[
+    ('cat', OneHotEncoder(drop='first', handle_unknown='ignore'), cat_cols),
+    ('num', 'passthrough', num_cols)
+])
+
+X_train, X_test, y_train, y_test = train_test_split(X, y, test_size=0.20, random_state=42)
+
+# 1. Linear Regression (Baseline & Interpretable)
+lr_pipe = Pipeline([('prep', preprocessor), ('reg', LinearRegression())])
+lr_pipe.fit(X_train, y_train)
+lr_pred = lr_pipe.predict(X_test)
+lr_train_pred = lr_pipe.predict(X_train)
+
+# 2. Ridge Regression
+ridge_pipe = Pipeline([('prep', preprocessor), ('reg', Ridge(alpha=1.0))])
+ridge_pipe.fit(X_train, y_train)
+ridge_pred = ridge_pipe.predict(X_test)
+ridge_train_pred = ridge_pipe.predict(X_train)
+
+# 3. Random Forest (50 trees for fast in-browser execution)
+rf_pipe = Pipeline([('prep', preprocessor), ('reg', RandomForestRegressor(n_estimators=50, random_state=42))])
+rf_pipe.fit(X_train, y_train)
+rf_pred = rf_pipe.predict(X_test)
+rf_train_pred = rf_pipe.predict(X_train)
+
+# 4. Gradient Boosting (50 trees)
+gb_pipe = Pipeline([('prep', preprocessor), ('reg', GradientBoostingRegressor(n_estimators=50, random_state=42))])
+gb_pipe.fit(X_train, y_train)
+gb_pred = gb_pipe.predict(X_test)
+gb_train_pred = gb_pipe.predict(X_train)
+
+# Feature names & coefficients from Linear Regression
+cat_encoder = lr_pipe.named_steps['prep'].named_transformers_['cat']
+cat_feat_names = list(cat_encoder.get_feature_names_out(cat_cols))
+all_feat_names = cat_feat_names + num_cols
+lr_coefs = lr_pipe.named_steps['reg'].coef_.tolist()
+lr_intercept = float(lr_pipe.named_steps['reg'].intercept_)
+
+feature_impacts = []
+for name, val in zip(all_feat_names, lr_coefs):
+    feature_impacts.append({'feature': name, 'coefficient': float(val)})
+feature_impacts.sort(key=lambda x: abs(x['coefficient']), reverse=True)
+
+# Model benchmarking summary
+models_benchmark = [
+    {
+        'name': 'Linear Regression (OLS)',
+        'type': 'Linear Baseline',
+        'r2_test': float(r2_score(y_test, lr_pred)),
+        'r2_train': float(r2_score(y_train, lr_train_pred)),
+        'mae': float(mean_absolute_error(y_test, lr_pred)),
+        'rmse': float(np.sqrt(mean_squared_error(y_test, lr_pred))),
+        'badge': 'Standard Baseline'
+    },
+    {
+        'name': 'Ridge Regression (L2 Regularized)',
+        'type': 'Regularized Linear',
+        'r2_test': float(r2_score(y_test, ridge_pred)),
+        'r2_train': float(r2_score(y_train, ridge_train_pred)),
+        'mae': float(mean_absolute_error(y_test, ridge_pred)),
+        'rmse': float(np.sqrt(mean_squared_error(y_test, ridge_pred))),
+        'badge': 'Multicollinearity Robust'
+    },
+    {
+        'name': 'Gradient Boosting Regressor',
+        'type': 'Ensemble Boosting',
+        'r2_test': float(r2_score(y_test, gb_pred)),
+        'r2_train': float(r2_score(y_train, gb_train_pred)),
+        'mae': float(mean_absolute_error(y_test, gb_pred)),
+        'rmse': float(np.sqrt(mean_squared_error(y_test, gb_pred))),
+        'badge': 'Top Accuracy'
+    },
+    {
+        'name': 'Random Forest Regressor (50 Trees)',
+        'type': 'Ensemble Bagging',
+        'r2_test': float(r2_score(y_test, rf_pred)),
+        'r2_train': float(r2_score(y_train, rf_train_pred)),
+        'mae': float(mean_absolute_error(y_test, rf_pred)),
+        'rmse': float(np.sqrt(mean_squared_error(y_test, rf_pred))),
+        'badge': 'Non-linear'
+    }
+]
+
+# Statistics
+numdf = df.select_dtypes(include=np.number)
+objdf = df.select_dtypes(include=['object', 'category'])
+
+# Histograms
+hist_counts, hist_edges = np.histogram(df['price'].dropna().astype(float), bins=20)
+hist_labels = [int((hist_edges[i] + hist_edges[i+1]) / 2) for i in range(len(hist_edges) - 1)]
+
+# Scatter area vs price
+scatter_data = df[['area', 'price']].dropna().to_numpy().tolist()
+
+# Furnishing averages
+furnishing_avg = df.groupby('furnishingstatus', as_index=False)['price'].mean().sort_values('price', ascending=False)
+
+# Correlation matrix
+corr_matrix = numdf.corr().round(3)
+corr_data = {
+    'columns': list(corr_matrix.columns),
+    'values': corr_matrix.values.tolist()
+}
+
+# Actual vs predicted for test set
+actual_pred = [[float(a), float(p), float(a - p)] for a, p in zip(y_test.to_numpy(), lr_pred)]
+
+# Data sample (50 rows for data table)
+sample_rows = []
+for row in df.head(100).itertuples(index=False, name=None):
+    sample_rows.append([int(v) if isinstance(v, (int, np.integer)) else float(v) if isinstance(v, (float, np.floating)) else str(v) for v in row])
+
+result = {
+    'shape': list(df.shape),
+    'columns': df.columns.tolist(),
+    'dtypes': {c: str(t) for c, t in df.dtypes.items()},
+    'missing_total': int(df.isnull().sum().sum()),
+    'duplicates_total': int(df.duplicated().sum()),
+    'negative_total': int((numdf < 0).sum().sum()),
+    'price_mean': float(df['price'].mean()),
+    'price_median': float(df['price'].median()),
+    'price_std': float(df['price'].std()),
+    'price_min': float(df['price'].min()),
+    'price_max': float(df['price'].max()),
+    'hist': {'labels': hist_labels, 'counts': hist_counts.tolist()},
+    'scatter': scatter_data,
+    'corr_price_area': float(df['area'].corr(df['price'])),
+    'corr_matrix': corr_data,
+    'furnishing': {
+        'labels': furnishing_avg['furnishingstatus'].astype(str).tolist(),
+        'values': furnishing_avg['price'].astype(float).tolist()
+    },
+    'train_n': len(X_train),
+    'test_n': len(X_test),
+    'benchmark': models_benchmark,
+    'lr_intercept': lr_intercept,
+    'feature_impacts': feature_impacts,
+    'actual_pred': actual_pred,
+    'data_headers': df.columns.tolist(),
+    'data_rows': sample_rows
+}
+json.dumps(result)`;
+
+    // App state
+    let pyodide = null;
+    let currentCsvText = DEFAULT_HOUSING_CSV;
+    let projectResult = null;
+    let chartInstances = {};
+    let activePreset = 'family';
+
+    // Linear model formula coefficients for sub-millisecond live JS valuation
+    let formula = {
+      intercept: 260032.36,
+      area: 235.97,
+      bedrooms: 76778.70,
+      bathrooms: 1094444.79,
+      stories: 407476.59,
+      parking: 224841.91,
+      mainroad_yes: 367919.95,
+      guestroom_yes: 231610.04,
+      basement_yes: 390251.18,
+      hotwaterheating_yes: 684649.89,
+      airconditioning_yes: 791426.74,
+      prefarea_yes: 629890.57,
+      furnishingstatus_semi: -126881.82,
+      furnishingstatus_unfurnished: -413645.06,
+      mae: 970043.40,
+      mean_price: 4766729.00
+    };
+
+    // Helper functions
+    const $ = id => document.getElementById(id);
+    const fmt = (n, d = 2) => Number(n).toLocaleString('en-IN', { maximumFractionDigits: d, minimumFractionDigits: d });
+    const fmtLakh = n => '₹' + (Number(n) / 100000).toFixed(2) + ' L';
+    const money = n => '₹' + Number(Math.round(n)).toLocaleString('en-IN');
+    const esc = s => String(s).replace(/[&<>"']/g, c => ({ '&': '&amp;', '<': '&lt;', '>': '&gt;', '"': '&quot;', "'": '&#39;' }[c]));
+
+    // Theme Toggle
+    const themeBtn = $('themeToggleBtn');
+    function initTheme() {
+      const saved = localStorage.getItem('housing_theme') || 'light';
+      document.documentElement.setAttribute('data-theme', saved);
+      themeBtn.textContent = saved === 'dark' ? '☀️ Light' : '🌙 Dark';
+    }
+    themeBtn.addEventListener('click', () => {
+      const cur = document.documentElement.getAttribute('data-theme') || 'light';
+      const nxt = cur === 'dark' ? 'light' : 'dark';
+      document.documentElement.setAttribute('data-theme', nxt);
+      localStorage.setItem('housing_theme', nxt);
+      themeBtn.textContent = nxt === 'dark' ? '☀️ Light' : '🌙 Dark';
+      // Refresh charts with updated theme colors if already rendered
+      if (projectResult) renderCharts(projectResult);
+    });
+
+    // Tab Navigation
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+      btn.addEventListener('click', () => {
+        document.querySelectorAll('.tab-btn').forEach(b => b.classList.remove('active'));
+        document.querySelectorAll('.tab-content').forEach(c => c.classList.remove('active'));
+        btn.classList.add('active');
+        const target = $(btn.getAttribute('data-tab'));
+        if (target) target.classList.add('active');
+      });
+    });
+
+    // Chart Helper
+    function renderChart(id, type, data, options = {}) {
+      if (chartInstances[id]) chartInstances[id].destroy();
+      const isDark = document.documentElement.getAttribute('data-theme') === 'dark';
+      const gridColor = isDark ? '#1e293b' : '#e2e8f0';
+      const textColor = isDark ? '#94a3b8' : '#64748b';
+
+      const defaultOptions = {
+        responsive: true,
+        maintainAspectRatio: false,
+        plugins: {
+          legend: { labels: { color: textColor, font: { family: 'system-ui' } } },
+          tooltip: { padding: 10, cornerRadius: 8 }
+        },
+        scales: options.scales || {
+          x: { grid: { color: gridColor }, ticks: { color: textColor } },
+          y: { grid: { color: gridColor }, ticks: { color: textColor } }
+        }
+      };
+
+      const canvas = $(id);
+      if (!canvas) return;
+      chartInstances[id] = new Chart(canvas, {
+        type,
+        data,
+        options: { ...defaultOptions, ...options }
+      });
+    }
+
+    // Initialize Pyodide
+    async function initPyodideEngine() {
+      try {
+        $('engineStatusText').textContent = 'Downloading Python WASM runtime...';
+        pyodide = await loadPyodide();
+        $('engineStatusText').textContent = 'Loading NumPy, Pandas & Scikit-Learn...';
+        await pyodide.loadPackage(['numpy', 'pandas', 'scikit-learn']);
+        
+        $('statusDot').className = 'status-dot ready';
+        $('engineStatusText').textContent = '✓ Scikit-Learn Engine Ready';
+        $('runPipelineBtn').disabled = false;
+        $('datasetSummaryStatus').textContent = 'Ready to execute. Click “⚡ Run Pipeline”.';
+        
+        // Auto-run on startup
+        runPipeline();
+      } catch (err) {
+        $('statusDot').className = 'status-dot error';
+        $('engineStatusText').textContent = 'Python engine error (Offline)';
+        console.error('Pyodide initialization failed:', err);
+        // Fallback: Populate UI with default precomputed data so page never stays broken!
+        runFallbackPipeline();
+      }
+    }
+
+    // Run Pipeline in Pyodide
+    async function runPipeline() {
+      if (!pyodide || !currentCsvText) return;
+      $('runPipelineBtn').disabled = true;
+      $('statusDot').className = 'status-dot running';
+      $('engineStatusText').textContent = 'Training 4 Models in Python...';
+
+      try {
+        pyodide.globals.set('csv_text', currentCsvText);
+        const rawJson = await pyodide.runPythonAsync(PYTHON_PIPELINE_CODE);
+        projectResult = JSON.parse(rawJson);
+        updateUIWithResults(projectResult);
+
+        $('statusDot').className = 'status-dot ready';
+        $('engineStatusText').textContent = '✓ Pipeline Executed Successfully';
+        $('dlPredictionsBtn').disabled = false;
+        $('dlMetricsBtn').disabled = false;
+      } catch (e) {
+        $('statusDot').className = 'status-dot error';
+        $('engineStatusText').textContent = 'Error running pipeline';
+        alert('Pipeline execution failed: ' + e.message);
+        console.error(e);
+      } finally {
+        $('runPipelineBtn').disabled = false;
+      }
+    }
+
+    // Update UI with computed metrics and render charts
+    function updateUIWithResults(r) {
+      // KPIs
+      $('kpiRows').textContent = r.shape[0].toLocaleString('en-IN');
+      $('kpiAvgPrice').textContent = fmtLakh(r.price_mean);
+      $('kpiAvgPriceFull').textContent = money(r.price_mean) + ' mean property value';
+      
+      const bestModel = [...r.benchmark].sort((a,b) => b.r2_test - a.r2_test)[0];
+      $('kpiR2').textContent = bestModel.r2_test.toFixed(3);
+      $('kpiBestModel').textContent = bestModel.name.split('(')[0].trim() + ' (Top Fit)';
+      $('kpiMae').textContent = fmtLakh(r.benchmark[0].mae);
+
+      // Data Health
+      $('healthMissing').textContent = `${r.missing_total} (0.0%)`;
+      $('healthDuplicates').textContent = r.duplicates_total;
+      $('healthNegative').textContent = r.negative_total;
+      $('healthSplit').textContent = `${r.train_n} : ${r.test_n} (80:20)`;
+
+      // Update formula parameters from Linear Regression output
+      formula.intercept = r.lr_intercept;
+      formula.mae = r.benchmark[0].mae;
+      formula.mean_price = r.price_mean;
+      for (const item of r.feature_impacts) {
+        if (item.feature === 'area') formula.area = item.coefficient;
+        if (item.feature === 'bedrooms') formula.bedrooms = item.coefficient;
+        if (item.feature === 'bathrooms') formula.bathrooms = item.coefficient;
+        if (item.feature === 'stories') formula.stories = item.coefficient;
+        if (item.feature === 'parking') formula.parking = item.coefficient;
+        if (item.feature === 'mainroad_yes') formula.mainroad_yes = item.coefficient;
+        if (item.feature === 'guestroom_yes') formula.guestroom_yes = item.coefficient;
+        if (item.feature === 'basement_yes') formula.basement_yes = item.coefficient;
+        if (item.feature === 'hotwaterheating_yes') formula.hotwaterheating_yes = item.coefficient;
+        if (item.feature === 'airconditioning_yes') formula.airconditioning_yes = item.coefficient;
+        if (item.feature === 'prefarea_yes') formula.prefarea_yes = item.coefficient;
+        if (item.feature === 'furnishingstatus_semi-furnished') formula.furnishingstatus_semi = item.coefficient;
+        if (item.feature === 'furnishingstatus_unfurnished') formula.furnishingstatus_unfurnished = item.coefficient;
+      }
+
+      // Render Benchmarking Table
+      renderBenchmarkTable(r.benchmark);
+
+      // Render Charts
+      renderCharts(r);
+
+      // Render Data Sample Table
+      renderDataTable(r.data_headers, r.data_rows);
+
+      // Trigger instant simulation update
+      calcLiveEstimate();
+    }
+
+    // Benchmark Table Rendering
+    function renderBenchmarkTable(benchmarks) {
+      const tbody = $('benchmarkTableBody');
+      tbody.innerHTML = '';
+      
+      const maxR2 = Math.max(...benchmarks.map(b => b.r2_test));
+      
+      benchmarks.forEach(m => {
+        const isBest = m.r2_test === maxR2;
+        const row = document.createElement('tr');
+        row.innerHTML = `
+          <td><b>${esc(m.name)}</b></td>
+          <td><span class="badge-model">${esc(m.type)}</span></td>
+          <td><b style="color:var(--primary); font-size:14px;">${m.r2_test.toFixed(4)}</b></td>
+          <td style="color:var(--text-muted);">${m.r2_train.toFixed(4)}</td>
+          <td>${money(m.mae)}</td>
+          <td>${money(m.rmse)}</td>
+          <td><span class="badge-model ${isBest ? 'badge-best' : ''}">${isBest ? '⭐ ' + esc(m.badge) : esc(m.badge)}</span></td>
+        `;
+        tbody.appendChild(row);
+      });
+    }
+
+    // Render Charts
+    function renderCharts(r) {
+      // 1. Price Histogram
+      renderChart('chartPriceHist', 'bar', {
+        labels: r.hist.labels.map(v => fmtLakh(v)),
+        datasets: [{
+          label: 'Properties in Bracket',
+          data: r.hist.counts,
+          backgroundColor: '#3b82f6cc',
+          borderRadius: 6
+        }]
+      }, {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Property Price (Midpoint)' } },
+          y: { title: { display: true, text: 'Frequency' } }
+        }
+      });
+      $('histStatsText').textContent = `Mean: ${fmtLakh(r.price_mean)} | Median: ${fmtLakh(r.price_median)} | Min: ${fmtLakh(r.price_min)} | Max: ${fmtLakh(r.price_max)} | Std: ${fmtLakh(r.price_std)}`;
+
+      // 2. Area vs Price Scatter
+      renderChart('chartAreaScatter', 'scatter', {
+        datasets: [{
+          label: 'Properties',
+          data: r.scatter.map(pt => ({ x: pt[0], y: pt[1] })),
+          backgroundColor: '#2563eb99',
+          pointRadius: 3
+        }]
+      }, {
+        plugins: { legend: { display: false } },
+        scales: {
+          x: { title: { display: true, text: 'Built-up Area (Sq. Ft.)' } },
+          y: { title: { display: true, text: 'Price (INR)' }, ticks: { callback: v => fmtLakh(v) } }
+        }
+      });
+      $('corrBadge').textContent = `r = +${r.corr_price_area.toFixed(3)}`;
+
+      // 3. Furnishing Average Bar
+      renderChart('chartFurnishing', 'bar', {
+        labels: r.furnishing.labels.map(l => l.charAt(0).toUpperCase() + l.slice(1)),
+        datasets: [{
+          label: 'Average Price',
+          data: r.furnishing.values,
+          backgroundColor: ['#10b981cc', '#3b82f6cc', '#94a3b8cc'],
+          borderRadius: 8
+        }]
+      }, {
+        plugins: { legend: { display: false } },
+        scales: {
+          y: { ticks: { callback: v => fmtLakh(v) } }
+        }
+      });
+
+      // 4. Numerical Correlations Bar
+      const corrCols = r.corr_matrix.columns.filter(c => c !== 'price');
+      const corrVals = corrCols.map(c => {
+        const idx = r.corr_matrix.columns.indexOf(c);
+        return r.corr_matrix.values[0][idx]; // correlation with price (row 0)
+      });
+      renderChart('chartCorrBar', 'bar', {
+        labels: corrCols.map(c => c.charAt(0).toUpperCase() + c.slice(1)),
+        datasets: [{
+          label: 'Correlation with Price (r)',
+          data: corrVals,
+          backgroundColor: corrVals.map(v => v >= 0.4 ? '#2563eb' : '#60a5fa'),
+          borderRadius: 6
+        }]
+      }, {
+        indexAxis: 'y',
+        plugins: { legend: { display: false } },
+        scales: { x: { min: 0, max: 0.7, title: { display: true, text: 'Pearson r' } } }
+      });
+
+      // 5. Feature Impacts (Coefficients)
+      const sortedImpacts = [...r.feature_impacts].reverse(); // reverse so largest at top
+      renderChart('chartFeatureImpact', 'bar', {
+        labels: sortedImpacts.map(i => i.feature.replace('_yes', '').replace('furnishingstatus_', 'Furnishing: ')),
+        datasets: [{
+          label: 'Price Impact (INR)',
+          data: sortedImpacts.map(i => i.coefficient),
+          backgroundColor: sortedImpacts.map(i => i.coefficient >= 0 ? '#10b981' : '#ef4444'),
+          borderRadius: 4
+        }]
+      }, {
+        indexAxis: 'y',
+        plugins: {
+          legend: { display: false },
+          tooltip: { callbacks: { label: ctx => 'Impact: ' + money(ctx.raw) } }
+        },
+        scales: {
+          x: { ticks: { callback: v => fmtLakh(v) } }
+        }
+      });
+
+      // 6. Actual vs Predicted Scatter
+      const minP = Math.min(...r.actual_pred.map(p => Math.min(p[0], p[1])));
+      const maxP = Math.max(...r.actual_pred.map(p => Math.max(p[0], p[1])));
+      renderChart('chartActualVsPred', 'scatter', {
+        datasets: [
+          {
+            label: 'Test Properties',
+            data: r.actual_pred.map(p => ({ x: p[0], y: p[1] })),
+            backgroundColor: '#8b5cf699',
+            pointRadius: 4
+          },
+          {
+            label: 'Perfect Fit Diagonal',
+            data: [{ x: minP, y: minP }, { x: maxP, y: maxP }],
+            type: 'line',
+            borderColor: '#f59e0b',
+            borderDash: [5, 5],
+            pointRadius: 0
+          }
+        ]
+      }, {
+        scales: {
+          x: { title: { display: true, text: 'Actual Price (INR)' }, ticks: { callback: v => fmtLakh(v) } },
+          y: { title: { display: true, text: 'Predicted Price (INR)' }, ticks: { callback: v => fmtLakh(v) } }
+        }
+      });
+
+      // 7. Residuals Plot
+      renderChart('chartResiduals', 'scatter', {
+        datasets: [
+          {
+            label: 'Residuals (Actual − Predicted)',
+            data: r.actual_pred.map(p => ({ x: p[1], y: p[2] })),
+            backgroundColor: '#ef444499',
+            pointRadius: 3
+          },
+          {
+            label: 'Zero Error Line',
+            data: [{ x: minP, y: 0 }, { x: maxP, y: 0 }],
+            type: 'line',
+            borderColor: '#64748b',
+            borderDash: [4, 4],
+            pointRadius: 0
+          }
+        ]
+      }, {
+        scales: {
+          x: { title: { display: true, text: 'Fitted / Predicted Price' }, ticks: { callback: v => fmtLakh(v) } },
+          y: { title: { display: true, text: 'Residual (Error in INR)' }, ticks: { callback: v => fmtLakh(v) } }
+        }
+      });
+    }
+
+    // Data Table Rendering with search
+    function renderDataTable(headers, rows) {
+      const headerRow = $('tableHeaders');
+      headerRow.innerHTML = headers.map(h => '<th>' + esc(h) + '</th>').join('');
+      
+      window.allRows = rows;
+      filterAndDisplayTable('');
+    }
+
+    function filterAndDisplayTable(query) {
+      const tbody = $('tableBody');
+      const q = query.toLowerCase();
+      const filtered = (window.allRows || []).filter(r => {
+        if (!q) return true;
+        return r.some(cell => String(cell).toLowerCase().includes(q));
+      }).slice(0, 30); // show top 30 matching
+
+      tbody.innerHTML = filtered.map(r => {
+        return '<tr>' + r.map((c, i) => {
+          if (i === 0) return '<td><b>' + money(c) + '</b></td>';
+          return '<td>' + esc(c) + '</td>';
+        }).join('') + '</tr>';
+      }).join('');
+    }
+
+    $('tableSearchInput').addEventListener('input', e => {
+      filterAndDisplayTable(e.target.value);
+    });
+
+    // ----------------------------------------------------
+    // LIVE INTERACTIVE PRICE ESTIMATOR ENGINE
+    // ----------------------------------------------------
+    function calcLiveEstimate() {
+      const area = Number($('simArea').value);
+      const bedrooms = Number($('simBedrooms').value);
+      const bathrooms = Number($('simBathrooms').value);
+      const stories = Number($('simStories').value);
+      const parking = Number($('simParking').value);
+
+      const mainroad = $('chip_mainroad').classList.contains('active');
+      const guestroom = $('chip_guestroom').classList.contains('active');
+      const basement = $('chip_basement').classList.contains('active');
+      const hotwater = $('chip_hotwaterheating').classList.contains('active');
+      const ac = $('chip_airconditioning').classList.contains('active');
+      const prefarea = $('chip_prefarea').classList.contains('active');
+      const furnish = $('simFurnishing').value;
+
+      // Update area label
+      $('lblArea').textContent = area.toLocaleString('en-IN') + ' sq ft';
+
+      // Compute Linear Equation in JS (Sub-millisecond 60fps execution)
+      let pred = formula.intercept +
+        (area * formula.area) +
+        (bedrooms * formula.bedrooms) +
+        (bathrooms * formula.bathrooms) +
+        (stories * formula.stories) +
+        (parking * formula.parking) +
+        (mainroad ? formula.mainroad_yes : 0) +
+        (guestroom ? formula.guestroom_yes : 0) +
+        (basement ? formula.basement_yes : 0) +
+        (hotwater ? formula.hotwaterheating_yes : 0) +
+        (ac ? formula.airconditioning_yes : 0) +
+        (prefarea ? formula.prefarea_yes : 0);
+
+      if (furnish === 'semi-furnished') pred += formula.furnishingstatus_semi;
+      if (furnish === 'unfurnished') pred += formula.furnishingstatus_unfurnished;
+
+      pred = Math.max(1000000, pred); // realistic lower floor
+
+      const low = Math.max(500000, pred - formula.mae);
+      const high = pred + formula.mae;
+      const diffPct = ((pred - formula.mean_price) / formula.mean_price) * 100;
+
+      // Update valuation card
+      $('simHeroPrice').textContent = fmtLakh(pred);
+      $('simFullPrice').textContent = money(pred) + ' INR';
+      $('simRangeNums').textContent = `${fmtLakh(low)} — ${fmtLakh(high)}`;
+
+      if (diffPct >= 0) {
+        $('simComparisonText').innerHTML = `<span style="color:var(--accent-green)">📈 +${diffPct.toFixed(1)}% above</span> dataset average (${fmtLakh(formula.mean_price)})`;
+      } else {
+        $('simComparisonText').innerHTML = `<span style="color:var(--accent-amber)">📉 ${Math.abs(diffPct).toFixed(1)}% below</span> dataset average (${fmtLakh(formula.mean_price)})`;
+      }
+
+      // Feature Breakdown Drivers
+      const drivers = [
+        { label: `${area.toLocaleString()} sq ft Built Area`, val: area * formula.area },
+        { label: `${bathrooms} Bathroom(s)`, val: bathrooms * formula.bathrooms },
+        { label: `Air Conditioning`, val: ac ? formula.airconditioning_yes : 0, show: ac },
+        { label: `Hot Water Heating`, val: hotwater ? formula.hotwaterheating_yes : 0, show: hotwater },
+        { label: `Preferred Area Location`, val: prefarea ? formula.prefarea_yes : 0, show: prefarea },
+        { label: `${stories} Story Layout`, val: stories * formula.stories },
+        { label: `Basement`, val: basement ? formula.basement_yes : 0, show: basement },
+        { label: `Main Road Access`, val: mainroad ? formula.mainroad_yes : 0, show: mainroad },
+        { label: `${parking} Parking Space(s)`, val: parking * formula.parking }
+      ];
+
+      const driversHtml = drivers
+        .filter(d => d.show !== false && d.val !== 0)
+        .sort((a,b) => b.val - a.val)
+        .slice(0, 6)
+        .map(d => `
+          <div class="val-driver-item">
+            <span>${d.label}</span>
+            <span class="${d.val >= 0 ? 'pos' : 'neg'}">${d.val >= 0 ? '+' : ''}${fmtLakh(d.val)}</span>
+          </div>
+        `).join('');
+
+      $('simDriversList').innerHTML = '<div style="font-size:11px; font-weight:700; color:var(--text-muted); margin-bottom:6px; text-transform:uppercase;">Top Value Contributors</div>' + driversHtml;
+    }
+
+    // Slider listener
+    $('simArea').addEventListener('input', calcLiveEstimate);
+
+    // Stepper buttons
+    window.stepVal = (id, delta, min, max) => {
+      const el = $(id);
+      let v = Number(el.value) + delta;
+      if (v < min) v = min;
+      if (v > max) v = max;
+      el.value = v;
+      const displayId = id.replace('sim', 'val');
+      if ($(displayId)) $(displayId).textContent = v;
+      calcLiveEstimate();
+    };
+
+    // Chip toggles
+    window.toggleChip = id => {
+      $(id).classList.toggle('active');
+      calcLiveEstimate();
+    };
+
+    // Furnishing status segmented control
+    window.setFurnishing = status => {
+      $('simFurnishing').value = status;
+      $('segFurnished').classList.toggle('active', status === 'furnished');
+      $('segSemi').classList.toggle('active', status === 'semi-furnished');
+      $('segUnfurnished').classList.toggle('active', status === 'unfurnished');
+      calcLiveEstimate();
+    };
+
+    // Quick presets
+    window.loadPreset = type => {
+      if (type === 'compact') {
+        $('simArea').value = 3200;
+        stepVal('simBedrooms', 2 - Number($('simBedrooms').value), 1, 6);
+        stepVal('simBathrooms', 1 - Number($('simBathrooms').value), 1, 4);
+        stepVal('simStories', 1 - Number($('simStories').value), 1, 4);
+        stepVal('simParking', 0 - Number($('simParking').value), 0, 3);
+        $('chip_mainroad').classList.add('active');
+        $('chip_airconditioning').classList.remove('active');
+        $('chip_basement').classList.remove('active');
+        $('chip_guestroom').classList.remove('active');
+        $('chip_hotwaterheating').classList.remove('active');
+        $('chip_prefarea').classList.remove('active');
+        setFurnishing('unfurnished');
+      } else if (type === 'family') {
+        $('simArea').value = 5000;
+        stepVal('simBedrooms', 3 - Number($('simBedrooms').value), 1, 6);
+        stepVal('simBathrooms', 2 - Number($('simBathrooms').value), 1, 4);
+        stepVal('simStories', 2 - Number($('simStories').value), 1, 4);
+        stepVal('simParking', 1 - Number($('simParking').value), 0, 3);
+        $('chip_mainroad').classList.add('active');
+        $('chip_airconditioning').classList.add('active');
+        $('chip_basement').classList.remove('active');
+        $('chip_guestroom').classList.remove('active');
+        $('chip_hotwaterheating').classList.remove('active');
+        $('chip_prefarea').classList.add('active');
+        setFurnishing('semi-furnished');
+      } else if (type === 'luxury') {
+        $('simArea').value = 8500;
+        stepVal('simBedrooms', 4 - Number($('simBedrooms').value), 1, 6);
+        stepVal('simBathrooms', 3 - Number($('simBathrooms').value), 1, 4);
+        stepVal('simStories', 3 - Number($('simStories').value), 1, 4);
+        stepVal('simParking', 2 - Number($('simParking').value), 0, 3);
+        $('chip_mainroad').classList.add('active');
+        $('chip_airconditioning').classList.add('active');
+        $('chip_basement').classList.add('active');
+        $('chip_guestroom').classList.add('active');
+        $('chip_hotwaterheating').classList.add('active');
+        $('chip_prefarea').classList.add('active');
+        setFurnishing('furnished');
+      }
+      calcLiveEstimate();
+    };
+
+    // Fallback pipeline if Pyodide fails to download
+    function runFallbackPipeline() {
+      calcLiveEstimate();
+    }
+
+    // Manual run button
+    $('runPipelineBtn').addEventListener('click', runPipeline);
+
+    // Custom File Upload
+    $('fileUploadInput').addEventListener('change', async e => {
+      const file = e.target.files[0];
+      if (!file) return;
+      try {
+        const ext = file.name.split('.').pop().toLowerCase();
+        $('datasetSummaryStatus').textContent = `Reading ${file.name}...`;
+        if (ext === 'csv') {
+          currentCsvText = await file.text();
+        } else if (ext === 'xlsx' || ext === 'xls') {
+          const buffer = await file.arrayBuffer();
+          const workbook = XLSX.read(buffer, { type: 'array' });
+          const sheet = workbook.Sheets[workbook.SheetNames[0]];
+          currentCsvText = XLSX.utils.sheet_to_csv(sheet);
+        }
+        $('datasetNameBadge').textContent = `${file.name} (${file.size.toLocaleString()} bytes)`;
+        $('datasetSummaryStatus').textContent = 'Custom file loaded. Click “⚡ Run Pipeline”.';
+        runPipeline();
+      } catch (err) {
+        alert('Could not read file: ' + err.message);
+      }
+    });
+
+    // CSV Download Helpers
+    function downloadCSV(filename, rows) {
+      const content = rows.map(r => r.map(c => `"${String(c).replace(/"/g, '""')}"`).join(',')).join('\r\n');
+      const blob = new Blob(['\ufeff' + content], { type: 'text/csv;charset=utf-8;' });
+      const url = URL.createObjectURL(blob);
+      const a = document.createElement('a');
+      a.href = url;
+      a.download = filename;
+      document.body.appendChild(a);
+      a.click();
+      a.remove();
+      URL.revokeObjectURL(url);
+    }
+
+    $('dlPredictionsBtn').addEventListener('click', () => {
+      if (!projectResult) return;
+      const rows = [['Actual Price', 'Predicted Price', 'Residual Error'], ...projectResult.actual_pred];
+      downloadCSV('SMLDS_Test_Predictions.csv', rows);
+    });
+
+    $('dlMetricsBtn').addEventListener('click', () => {
+      if (!projectResult) return;
+      const rows = [
+        ['Model', 'Type', 'Test R2', 'Train R2', 'MAE', 'RMSE'],
+        ...projectResult.benchmark.map(b => [b.name, b.type, b.r2_test, b.r2_train, b.mae, b.rmse])
+      ];
+      downloadCSV('SMLDS_Model_Metrics.csv', rows);
+    });
+
+    // Start App
+    initTheme();
+    calcLiveEstimate();
+    initPyodideEngine();
+  </script>
+</body>
+</html>
